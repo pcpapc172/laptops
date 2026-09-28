@@ -1,0 +1,40 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+bin/
+out/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Snapshots and temporary images
+snapshot*.png
+*.log
+
+# Qt Creator & IDE artifacts
+*.user
+*.user.*
+.vscode/
+.idea/
+
+# CMake cache
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+
+# Object files & Binaries
+*.o
+*.a
+*.so
+*.dll
+*.exe
+laptop_manager
+test_manager
+snapshot
