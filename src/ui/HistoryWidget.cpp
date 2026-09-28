@@ -125,6 +125,8 @@ void HistoryWidget::setupUi() {
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setAlternatingRowColors(true);
+    m_table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_table->horizontalHeader()->setMinimumSectionSize(72);
 
     mainLayout->addWidget(m_table);
 }
@@ -228,7 +230,7 @@ void HistoryWidget::populateTable() {
         QPushButton* delBtn = new QPushButton("حذف", actWidget);
         delBtn->setToolTip("حذف رکورد از بایگانی");
         delBtn->setProperty("danger", true);
-        delBtn->setFixedWidth(46);
+        delBtn->setMinimumWidth(76);
         int recId = rec.id;
         connect(delBtn, &QPushButton::clicked, this, [this, recId]() {
             onDeleteRecord(recId);

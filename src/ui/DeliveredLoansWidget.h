@@ -14,8 +14,12 @@ public:
 
     void refreshData();
 
+signals:
+    void recordsChanged();
+
 private slots:
     void onSearchChanged(const QString& text);
+    void onDeleteRecord(int loanId);
 
 private:
     QLineEdit* m_searchEdit;

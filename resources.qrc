@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file alias="chevron-light.xpm">resources/chevron-light.xpm</file>
+        <file alias="chevron-dark.xpm">resources/chevron-dark.xpm</file>
+    </qresource>
+</RCC>

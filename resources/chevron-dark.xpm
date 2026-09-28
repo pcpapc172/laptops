@@ -1,0 +1,11 @@
+/* XPM */
+static const char *chevron_dark[] = {
+"9 6 2 1",
+"  c None",
+". c #C4C7C5",
+".       .",
+" .     . ",
+"  .   .  ",
+"   . .   ",
+"    .    ",
+"         "};

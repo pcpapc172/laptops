@@ -116,6 +116,21 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 border: none;
             }
 
+            QComboBox::down-arrow {
+                image: url(:/icons/chevron-dark.xpm);
+                width: 9px;
+                height: 6px;
+            }
+
+            QComboBox QLineEdit {
+                background-color: transparent;
+                border: none;
+                border-radius: 0px;
+                padding: 0px 4px;
+                min-height: 0px;
+                color: #ffffff;
+            }
+
             QComboBox QAbstractItemView {
                 background-color: #1e1f20;
                 border: 1px solid #3c4043;
@@ -125,6 +140,17 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 selection-background-color: #004a77;
                 selection-color: #c2e7ff;
                 outline: none;
+            }
+
+            QComboBox QAbstractItemView::item {
+                min-height: 30px;
+                padding: 5px 10px;
+                color: #e3e3e3;
+            }
+
+            QComboBox QAbstractItemView::item:selected {
+                background-color: #004a77;
+                color: #c2e7ff;
             }
 
             /* Lists in settings */
@@ -296,6 +322,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
             /* Table Styling */
             QTableWidget, QTableView {
                 background-color: #1e1f20;
+                alternate-background-color: #252729;
                 border: 1px solid #3c4043;
                 border-radius: 12px;
                 gridline-color: #282a2c;
@@ -467,14 +494,41 @@ inline QString getApplicationStyle(bool darkMode = false) {
             border: none;
         }
 
+        QComboBox::down-arrow {
+            image: url(:/icons/chevron-light.xpm);
+            width: 9px;
+            height: 6px;
+        }
+
+        QComboBox QLineEdit {
+            background-color: transparent;
+            border: none;
+            border-radius: 0px;
+            padding: 0px 4px;
+            min-height: 0px;
+            color: #202124;
+        }
+
         QComboBox QAbstractItemView {
             background-color: #ffffff;
             border: 1px solid #dadce0;
             border-radius: 8px;
             padding: 6px;
+            color: #202124;
             selection-background-color: #e8f0fe;
             selection-color: #1a73e8;
             outline: none;
+        }
+
+        QComboBox QAbstractItemView::item {
+            min-height: 30px;
+            padding: 5px 10px;
+            color: #202124;
+        }
+
+        QComboBox QAbstractItemView::item:selected {
+            background-color: #e8f0fe;
+            color: #1967d2;
         }
 
         QListWidget {
@@ -643,6 +697,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
 
         QTableWidget, QTableView {
             background-color: #ffffff;
+            alternate-background-color: #f8fafd;
             border: 1px solid #dadce0;
             border-radius: 12px;
             gridline-color: #f1f3f4;

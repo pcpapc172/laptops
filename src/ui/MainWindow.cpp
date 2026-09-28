@@ -9,6 +9,11 @@
 #include <QStatusBar>
 #include <QStyle>
 #include <QApplication>
+#include <QPalette>
+#include <QColor>
+#include <QComboBox>
+#include <QAbstractItemView>
+#include <QLineEdit>
 #include "NewLoanWidget.h"
 #include "ActiveLoansWidget.h"
 #include "DeliveredLoansWidget.h"
@@ -140,7 +145,8 @@ void MainWindow::setupUi() {
     // ================= 4. STATUS BAR =================
     QStatusBar* sb = statusBar();
     QString dbPath = DatabaseManager::instance().getDatabaseFilePath();
-    QLabel* dbLabel = new QLabel(QString("مسیر پایگاه داده: %1").arg(dbPath), this);
+    QLabel* dbLabel = new QLabel("ذخیره‌سازی محلی", this);
+    dbLabel->setToolTip(dbPath);
     dbLabel->setStyleSheet("color: #5f6368; font-size: 11px; padding: 2px 8px;");
     sb->addPermanentWidget(dbLabel);
 }
@@ -159,6 +165,11 @@ void MainWindow::setupConnections() {
         updateHeaderStats();
     });
 
+    connect(m_deliveredLoansWidget, &DeliveredLoansWidget::recordsChanged, this, [this]() {
+        m_historyWidget->refreshData();
+        updateHeaderStats();
+    });
+
     // When presets change in Settings, refresh NewLoan form presets
     connect(m_settingsWidget, &SettingsWidget::presetsChanged, this, [this]() {
         m_newLoanWidget->refreshPresets();
@@ -169,7 +180,60 @@ void MainWindow::setupConnections() {
 }
 
 void MainWindow::applyTheme(bool isDark) {
+    QPalette palette;
+    if (isDark) {
+        palette.setColor(QPalette::Window, QColor("#131314"));
+        palette.setColor(QPalette::WindowText, QColor("#e3e3e3"));
+        palette.setColor(QPalette::Base, QColor("#1e1f20"));
+        palette.setColor(QPalette::AlternateBase, QColor("#252729"));
+        palette.setColor(QPalette::Text, QColor("#e3e3e3"));
+        palette.setColor(QPalette::PlaceholderText, QColor("#aeb4ba"));
+        palette.setColor(QPalette::Button, QColor("#282a2c"));
+        palette.setColor(QPalette::ButtonText, QColor("#e3e3e3"));
+        palette.setColor(QPalette::Highlight, QColor("#004a77"));
+        palette.setColor(QPalette::HighlightedText, QColor("#c2e7ff"));
+        palette.setColor(QPalette::ToolTipBase, QColor("#282a2c"));
+        palette.setColor(QPalette::ToolTipText, QColor("#ffffff"));
+    } else {
+        palette.setColor(QPalette::Window, QColor("#f8f9fa"));
+        palette.setColor(QPalette::WindowText, QColor("#202124"));
+        palette.setColor(QPalette::Base, QColor("#ffffff"));
+        palette.setColor(QPalette::AlternateBase, QColor("#f8fafd"));
+        palette.setColor(QPalette::Text, QColor("#202124"));
+        palette.setColor(QPalette::PlaceholderText, QColor("#70757a"));
+        palette.setColor(QPalette::Button, QColor("#ffffff"));
+        palette.setColor(QPalette::ButtonText, QColor("#202124"));
+        palette.setColor(QPalette::Highlight, QColor("#e8f0fe"));
+        palette.setColor(QPalette::HighlightedText, QColor("#1967d2"));
+        palette.setColor(QPalette::ToolTipBase, QColor("#202124"));
+        palette.setColor(QPalette::ToolTipText, QColor("#ffffff"));
+    }
+    qApp->setPalette(palette);
     qApp->setStyleSheet(StyleHelper::getApplicationStyle(isDark));
+
+    const QString popupStyle = isDark
+        ? QStringLiteral("QAbstractItemView { background-color: #1e1f20; color: #f1f3f4; border: 1px solid #3c4043; selection-background-color: #004a77; selection-color: #c2e7ff; } QAbstractItemView::item { color: #f1f3f4; min-height: 30px; padding: 5px 10px; } QAbstractItemView::item:selected { background-color: #004a77; color: #c2e7ff; }")
+        : QStringLiteral("QAbstractItemView { background-color: #ffffff; color: #202124; border: 1px solid #dadce0; selection-background-color: #e8f0fe; selection-color: #1967d2; } QAbstractItemView::item { color: #202124; min-height: 30px; padding: 5px 10px; } QAbstractItemView::item:selected { background-color: #e8f0fe; color: #1967d2; }");
+    const auto comboBoxes = qApp->allWidgets();
+    for (QWidget* widget : comboBoxes) {
+        auto* combo = qobject_cast<QComboBox*>(widget);
+        if (!combo) continue;
+        combo->setMaxVisibleItems(5);
+        combo->setPalette(palette);
+        if (combo->lineEdit()) combo->lineEdit()->setPalette(palette);
+        QAbstractItemView* popup = combo->view();
+        popup->setPalette(palette);
+        popup->setStyleSheet(popupStyle);
+        popup->setMaximumHeight(220);
+    }
+
+    // Re-evaluate property-based styles such as primary action buttons when the
+    // application theme changes at runtime.
+    for (QWidget* widget : comboBoxes) {
+        widget->style()->unpolish(widget);
+        widget->style()->polish(widget);
+        widget->update();
+    }
     if (m_darkModeBtn) {
         m_darkModeBtn->setText(isDark ? "حالت روشن (Light)" : "حالت تاریک (Dark)");
     }

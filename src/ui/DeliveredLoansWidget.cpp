@@ -6,6 +6,8 @@
 #include <QPushButton>
 #include <QTableWidget>
 #include <QHeaderView>
+#include <QMessageBox>
+#include <QColor>
 #include "../db/DatabaseManager.h"
 #include "../utils/DateTimeUtils.h"
 
@@ -54,7 +56,7 @@ void DeliveredLoansWidget::setupUi() {
 
     // Table
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(11);
+    m_table->setColumnCount(12);
     m_table->setHorizontalHeaderLabels({
         "ردیف",
         "شماره لپ‌تاپ",
@@ -66,7 +68,8 @@ void DeliveredLoansWidget::setupUi() {
         "وضعیت اولیه",
         "وضعیت بعد از تحویل",
         "زمان امانت",
-        "زمان بازگرداندن"
+        "زمان بازگرداندن",
+        "عملیات"
     });
 
     m_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
@@ -80,11 +83,14 @@ void DeliveredLoansWidget::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(10, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(11, QHeaderView::ResizeToContents);
 
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setAlternatingRowColors(true);
+    m_table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_table->horizontalHeader()->setMinimumSectionSize(72);
 
     mainLayout->addWidget(m_table);
 }
@@ -141,6 +147,7 @@ void DeliveredLoansWidget::populateTable() {
         QFont rf = returnerItem->font();
         rf.setBold(true);
         returnerItem->setFont(rf);
+        returnerItem->setForeground(QColor(DatabaseManager::instance().isDarkMode() ? "#81c995" : "#137333"));
 
         // Initial condition
         QTableWidgetItem* initCondItem = new QTableWidgetItem(rec.initialCondition);
@@ -168,6 +175,38 @@ void DeliveredLoansWidget::populateTable() {
         m_table->setItem(row, 9, lendTimeItem);
         m_table->setItem(row, 10, retTimeItem);
 
+        QWidget* actionWidget = new QWidget(this);
+        QHBoxLayout* actionLayout = new QHBoxLayout(actionWidget);
+        actionLayout->setContentsMargins(4, 2, 4, 2);
+        actionLayout->setAlignment(Qt::AlignCenter);
+        QPushButton* deleteButton = new QPushButton("حذف", actionWidget);
+        deleteButton->setProperty("danger", true);
+        deleteButton->setMinimumWidth(72);
+        deleteButton->setCursor(Qt::PointingHandCursor);
+        const int loanId = rec.id;
+        connect(deleteButton, &QPushButton::clicked, this, [this, loanId]() {
+            onDeleteRecord(loanId);
+        });
+        actionLayout->addWidget(deleteButton);
+        m_table->setCellWidget(row, 11, actionWidget);
+
         m_table->setRowHeight(row, 44);
+    }
+}
+
+void DeliveredLoansWidget::onDeleteRecord(int loanId) {
+    const auto reply = QMessageBox::question(
+        this,
+        "تأیید حذف",
+        QString("آیا از حذف رکورد تحویل‌شده با کد #%1 اطمینان دارید؟ این کار قابل بازگشت نیست.").arg(loanId),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+    if (reply != QMessageBox::Yes) return;
+
+    if (DatabaseManager::instance().deleteLoan(loanId)) {
+        refreshData();
+        emit recordsChanged();
+    } else {
+        QMessageBox::critical(this, "خطا", "حذف رکورد با خطا مواجه شد.");
     }
 }

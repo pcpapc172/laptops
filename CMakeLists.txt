@@ -34,6 +34,7 @@ set(SOURCES
     src/ui/SettingsWidget.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
+    resources.qrc
 )
 
 add_executable(laptop_manager ${SOURCES})
@@ -93,5 +94,4 @@ target_link_libraries(snapshot PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Sql
 )
-
 
