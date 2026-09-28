@@ -14,6 +14,7 @@
 #include <QComboBox>
 #include <QAbstractItemView>
 #include <QLineEdit>
+#include <QPushButton>
 #include "NewLoanWidget.h"
 #include "ActiveLoansWidget.h"
 #include "DeliveredLoansWidget.h"
@@ -210,6 +211,21 @@ void MainWindow::applyTheme(bool isDark) {
     }
     qApp->setPalette(palette);
     qApp->setStyleSheet(StyleHelper::getApplicationStyle(isDark));
+
+    for (QWidget* widget : qApp->allWidgets()) {
+        auto* button = qobject_cast<QPushButton*>(widget);
+        if (!button) continue;
+
+        if (button->property("primary").toBool() || button->objectName() == "submitBtn") {
+            button->setStyleSheet(isDark
+                ? QStringLiteral("QPushButton { background-color:#8ab4f8; color:#001d35; border:1px solid #8ab4f8; border-radius:8px; padding:6px 18px; font-weight:bold; min-height:28px; }")
+                : QStringLiteral("QPushButton { background-color:#1a73e8; color:#ffffff; border:1px solid #1a73e8; border-radius:8px; padding:6px 18px; font-weight:bold; min-height:28px; }"));
+        } else if (button->property("danger").toBool()) {
+            button->setStyleSheet(isDark
+                ? QStringLiteral("QPushButton { background-color:#3c1e1e; color:#f28b82; border:1px solid #6f3333; border-radius:7px; padding:2px 12px; min-height:22px; }")
+                : QStringLiteral("QPushButton { background-color:#fff7f6; color:#c5221f; border:1px solid #f4b8b4; border-radius:7px; padding:2px 12px; min-height:22px; }"));
+        }
+    }
 
     const QString popupStyle = isDark
         ? QStringLiteral("QAbstractItemView { background-color: #1e1f20; color: #f1f3f4; border: 1px solid #3c4043; selection-background-color: #004a77; selection-color: #c2e7ff; } QAbstractItemView::item { color: #f1f3f4; min-height: 30px; padding: 5px 10px; } QAbstractItemView::item:selected { background-color: #004a77; color: #c2e7ff; }")

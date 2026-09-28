@@ -115,6 +115,8 @@ void SettingsWidget::setupUi() {
     m_newTeacherEdit->setPlaceholderText("نام معلم جدید...");
     m_addTeacherBtn = new QPushButton("افزودن معلم", presetsCard);
     m_addTeacherBtn->setProperty("primary", true);
+    m_addTeacherBtn->setMinimumWidth(120);
+    m_addTeacherBtn->setFixedHeight(42);
     connect(m_addTeacherBtn, &QPushButton::clicked, this, &SettingsWidget::onAddTeacher);
     connect(m_newTeacherEdit, &QLineEdit::returnPressed, this, &SettingsWidget::onAddTeacher);
 
@@ -145,6 +147,8 @@ void SettingsWidget::setupUi() {
     m_newGradeEdit->setPlaceholderText("پایه تحصیلی جدید (مثلاً: دهم الف)...");
     m_addGradeBtn = new QPushButton("افزودن پایه", presetsCard);
     m_addGradeBtn->setProperty("primary", true);
+    m_addGradeBtn->setMinimumWidth(120);
+    m_addGradeBtn->setFixedHeight(42);
     connect(m_addGradeBtn, &QPushButton::clicked, this, &SettingsWidget::onAddGrade);
     connect(m_newGradeEdit, &QLineEdit::returnPressed, this, &SettingsWidget::onAddGrade);
 

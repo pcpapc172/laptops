@@ -182,6 +182,7 @@ void DeliveredLoansWidget::populateTable() {
         QPushButton* deleteButton = new QPushButton("حذف", actionWidget);
         deleteButton->setProperty("danger", true);
         deleteButton->setMinimumWidth(72);
+        deleteButton->setFixedHeight(32);
         deleteButton->setCursor(Qt::PointingHandCursor);
         const int loanId = rec.id;
         connect(deleteButton, &QPushButton::clicked, this, [this, loanId]() {
@@ -190,7 +191,7 @@ void DeliveredLoansWidget::populateTable() {
         actionLayout->addWidget(deleteButton);
         m_table->setCellWidget(row, 11, actionWidget);
 
-        m_table->setRowHeight(row, 44);
+        m_table->setRowHeight(row, 48);
     }
 }
 

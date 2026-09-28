@@ -231,6 +231,7 @@ void HistoryWidget::populateTable() {
         delBtn->setToolTip("حذف رکورد از بایگانی");
         delBtn->setProperty("danger", true);
         delBtn->setMinimumWidth(76);
+        delBtn->setFixedHeight(32);
         int recId = rec.id;
         connect(delBtn, &QPushButton::clicked, this, [this, recId]() {
             onDeleteRecord(recId);
@@ -239,7 +240,7 @@ void HistoryWidget::populateTable() {
         actLayout->addWidget(delBtn);
         m_table->setCellWidget(row, 11, actWidget);
 
-        m_table->setRowHeight(row, 44);
+        m_table->setRowHeight(row, 48);
     }
 }
 
