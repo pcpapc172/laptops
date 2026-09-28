@@ -30,7 +30,6 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2019_64'
-          modules: 'qtbase'
 
       - name: Configure CMake
         run: |
@@ -44,7 +43,11 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          cp build/Release/laptop_manager.exe dist/ || cp build/laptop_manager.exe dist/
+          if [ -f "build/Release/laptop_manager.exe" ]; then
+            cp build/Release/laptop_manager.exe dist/
+          else
+            cp build/laptop_manager.exe dist/
+          fi
           windeployqt --release --compiler-runtime dist/laptop_manager.exe
 
       - name: Create Windows ZIP Archive
@@ -102,17 +105,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: LaptopManager-Windows-x64
+          path: ./dist-release
 
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
         with:
           name: LaptopManager-Linux-x64
+          path: ./dist-release
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            LaptopManager-Windows-x64.zip
-            LaptopManager-Linux-x64.tar.gz
+            dist-release/LaptopManager-Windows-x64.zip
+            dist-release/LaptopManager-Linux-x64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
