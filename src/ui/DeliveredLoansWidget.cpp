@@ -41,22 +41,27 @@ void DeliveredLoansWidget::setupUi() {
     topBar->addWidget(m_counterLabel);
     topBar->addStretch();
 
-    // Search bar
+    mainLayout->addLayout(topBar);
+
+    // Controls get their own row so they remain usable at narrower widths.
+    QHBoxLayout* controlsBar = new QHBoxLayout();
+    controlsBar->setSpacing(10);
     m_searchEdit = new QLineEdit(this);
-    m_searchEdit->setPlaceholderText("جستجو (شماره لپ‌تاپ، تحویل‌دهنده، دبیر)...");
-    m_searchEdit->setFixedWidth(320);
+    m_searchEdit->setPlaceholderText("جستجو در لپ‌تاپ، تحویل‌دهنده، دبیر و یادداشت...");
+    m_searchEdit->setMinimumWidth(180);
+    m_searchEdit->setMaximumWidth(360);
     connect(m_searchEdit, &QLineEdit::textChanged, this, &DeliveredLoansWidget::onSearchChanged);
-    topBar->addWidget(m_searchEdit);
+    controlsBar->addWidget(m_searchEdit, 1);
 
     QPushButton* refreshBtn = new QPushButton("بروزرسانی لیست", this);
     connect(refreshBtn, &QPushButton::clicked, this, &DeliveredLoansWidget::refreshData);
-    topBar->addWidget(refreshBtn);
+    controlsBar->addWidget(refreshBtn);
 
-    mainLayout->addLayout(topBar);
+    mainLayout->addLayout(controlsBar);
 
     // Table
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(12);
+    m_table->setColumnCount(13);
     m_table->setHorizontalHeaderLabels({
         "ردیف",
         "شماره لپ‌تاپ",
@@ -69,6 +74,7 @@ void DeliveredLoansWidget::setupUi() {
         "وضعیت بعد از تحویل",
         "زمان امانت",
         "زمان بازگرداندن",
+        "یادداشت",
         "عملیات"
     });
 
@@ -83,7 +89,8 @@ void DeliveredLoansWidget::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(10, QHeaderView::ResizeToContents);
-    m_table->horizontalHeader()->setSectionResizeMode(11, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(11, QHeaderView::Stretch);
+    m_table->horizontalHeader()->setSectionResizeMode(12, QHeaderView::ResizeToContents);
 
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -162,6 +169,8 @@ void DeliveredLoansWidget::populateTable() {
         // Return Time
         QTableWidgetItem* retTimeItem = new QTableWidgetItem(DateTimeUtils::formatJalaliDateTime(rec.returnTime));
         retTimeItem->setTextAlignment(Qt::AlignCenter);
+        QTableWidgetItem* notesItem = new QTableWidgetItem(rec.notes.isEmpty() ? "-" : rec.notes);
+        notesItem->setToolTip(rec.notes);
 
         m_table->setItem(row, 0, idxItem);
         m_table->setItem(row, 1, numItem);
@@ -174,6 +183,7 @@ void DeliveredLoansWidget::populateTable() {
         m_table->setItem(row, 8, retCondItem);
         m_table->setItem(row, 9, lendTimeItem);
         m_table->setItem(row, 10, retTimeItem);
+        m_table->setItem(row, 11, notesItem);
 
         QWidget* actionWidget = new QWidget(this);
         QHBoxLayout* actionLayout = new QHBoxLayout(actionWidget);
@@ -181,15 +191,14 @@ void DeliveredLoansWidget::populateTable() {
         actionLayout->setAlignment(Qt::AlignCenter);
         QPushButton* deleteButton = new QPushButton("حذف", actionWidget);
         deleteButton->setProperty("danger", true);
-        deleteButton->setMinimumWidth(72);
-        deleteButton->setFixedHeight(32);
+        deleteButton->setMinimumSize(72, 36);
         deleteButton->setCursor(Qt::PointingHandCursor);
         const int loanId = rec.id;
         connect(deleteButton, &QPushButton::clicked, this, [this, loanId]() {
             onDeleteRecord(loanId);
         });
         actionLayout->addWidget(deleteButton);
-        m_table->setCellWidget(row, 11, actionWidget);
+        m_table->setCellWidget(row, 12, actionWidget);
 
         m_table->setRowHeight(row, 48);
     }

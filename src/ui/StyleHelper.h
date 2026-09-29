@@ -9,7 +9,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
         // ================= GOOGLE MATERIAL 3 DARK THEME =================
         return R"(
             QWidget {
-                font-family: "Noto Sans Arabic UI", "Noto Sans Arabic", "Vazirmatn", "Tahoma", "Segoe UI", sans-serif;
+                font-family: "Vazir";
                 font-size: 13px;
                 color: #e3e3e3;
                 background-color: #131314;
@@ -69,8 +69,8 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 background-color: #282a2c;
                 border: 1px solid #444746;
                 border-radius: 8px;
-                padding: 2px 14px;
-                min-height: 42px;
+                padding: 6px 12px;
+                min-height: 0px;
                 color: #ffffff;
                 font-size: 13px;
                 selection-background-color: #004a77;
@@ -93,8 +93,8 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 background-color: #282a2c;
                 border: 1px solid #444746;
                 border-radius: 8px;
-                padding: 2px 14px;
-                min-height: 42px;
+                padding: 6px 34px;
+                min-height: 0px;
                 color: #ffffff;
                 font-size: 13px;
             }
@@ -106,13 +106,13 @@ inline QString getApplicationStyle(bool darkMode = false) {
 
             QComboBox:focus {
                 border: 2px solid #8ab4f8;
-                padding: 3px 13px;
+                padding: 3px 34px;
             }
 
             QComboBox::drop-down {
                 subcontrol-origin: padding;
                 subcontrol-position: top left;
-                width: 28px;
+                width: 30px;
                 border: none;
             }
 
@@ -126,7 +126,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 background-color: transparent;
                 border: none;
                 border-radius: 0px;
-                padding: 0px 4px;
+                padding: 0px 6px;
                 min-height: 0px;
                 color: #ffffff;
             }
@@ -143,8 +143,8 @@ inline QString getApplicationStyle(bool darkMode = false) {
             }
 
             QComboBox QAbstractItemView::item {
-                min-height: 30px;
-                padding: 5px 10px;
+                min-height: 34px;
+                padding: 7px 12px;
                 color: #e3e3e3;
             }
 
@@ -180,10 +180,10 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 color: #8ab4f8;
                 border: 1px solid #3c4043;
                 border-radius: 8px;
-                padding: 8px 18px;
+                padding: 6px 14px;
                 font-weight: 500;
                 font-size: 13px;
-                min-height: 24px;
+                min-height: 28px;
             }
 
             QPushButton:hover {
@@ -202,10 +202,10 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 color: #001d35;
                 border: 1px solid #8ab4f8;
                 border-radius: 8px;
-                padding: 8px 24px;
+                padding: 6px 16px;
                 font-weight: bold;
                 font-size: 13px;
-                min-height: 26px;
+                min-height: 30px;
             }
 
             QPushButton#submitBtn:hover, QPushButton[primary="true"]:hover {
@@ -224,7 +224,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 color: #04210c;
                 border: 1px solid #81c995;
                 border-radius: 8px;
-                padding: 8px 18px;
+                padding: 6px 14px;
                 font-weight: bold;
                 font-size: 13px;
             }
@@ -253,11 +253,11 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 color: #9aa0a6;
                 border: none;
                 border-radius: 20px;
-                padding: 8px 24px;
+                padding: 6px 16px;
                 font-size: 13px;
                 font-weight: bold;
-                min-height: 24px;
-                min-width: 140px;
+                min-height: 28px;
+                min-width: 0px;
             }
 
             QPushButton[navButton="true"]:hover {
@@ -397,7 +397,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
     // ================= GOOGLE MATERIAL 3 LIGHT THEME =================
     return R"(
         QWidget {
-            font-family: "Noto Sans Arabic UI", "Noto Sans Arabic", "Vazirmatn", "Tahoma", "Segoe UI", sans-serif;
+            font-family: "Vazir";
             font-size: 13px;
             color: #202124;
             background-color: #f8f9fa;
@@ -447,8 +447,8 @@ inline QString getApplicationStyle(bool darkMode = false) {
             background-color: #ffffff;
             border: 1px solid #bdc1c6;
             border-radius: 8px;
-            padding: 4px 12px;
-            min-height: 38px;
+            padding: 6px 12px;
+            min-height: 0px;
             color: #202124;
             font-size: 13px;
             selection-background-color: #c2e7ff;
@@ -471,8 +471,8 @@ inline QString getApplicationStyle(bool darkMode = false) {
             background-color: #ffffff;
             border: 1px solid #bdc1c6;
             border-radius: 8px;
-            padding: 4px 14px;
-            min-height: 38px;
+            padding: 6px 34px;
+            min-height: 0px;
             color: #202124;
             font-size: 13px;
         }
@@ -484,13 +484,13 @@ inline QString getApplicationStyle(bool darkMode = false) {
 
         QComboBox:focus {
             border: 2px solid #1a73e8;
-            padding: 3px 13px;
+            padding: 3px 34px;
         }
 
         QComboBox::drop-down {
             subcontrol-origin: padding;
             subcontrol-position: top left;
-            width: 28px;
+            width: 30px;
             border: none;
         }
 
@@ -504,7 +504,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
             background-color: transparent;
             border: none;
             border-radius: 0px;
-            padding: 0px 4px;
+            padding: 0px 6px;
             min-height: 0px;
             color: #202124;
         }
@@ -521,8 +521,8 @@ inline QString getApplicationStyle(bool darkMode = false) {
         }
 
         QComboBox QAbstractItemView::item {
-            min-height: 30px;
-            padding: 5px 10px;
+            min-height: 34px;
+            padding: 7px 12px;
             color: #202124;
         }
 
@@ -556,10 +556,10 @@ inline QString getApplicationStyle(bool darkMode = false) {
             color: #1a73e8;
             border: 1px solid #dadce0;
             border-radius: 8px;
-            padding: 8px 18px;
+            padding: 6px 14px;
             font-weight: 500;
             font-size: 13px;
-            min-height: 24px;
+            min-height: 28px;
         }
 
         QPushButton:hover {
@@ -583,10 +583,10 @@ inline QString getApplicationStyle(bool darkMode = false) {
             color: #ffffff;
             border: 1px solid #1a73e8;
             border-radius: 8px;
-            padding: 8px 24px;
+            padding: 6px 16px;
             font-weight: bold;
             font-size: 13px;
-            min-height: 26px;
+            min-height: 30px;
         }
 
         QPushButton[primary="true"]:hover {
@@ -604,7 +604,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
             color: #ffffff;
             border: 1px solid #1e8e3e;
             border-radius: 8px;
-            padding: 8px 18px;
+            padding: 6px 14px;
             font-weight: bold;
             font-size: 13px;
         }
@@ -631,11 +631,11 @@ inline QString getApplicationStyle(bool darkMode = false) {
             color: #5f6368;
             border: none;
             border-radius: 20px;
-            padding: 8px 24px;
+            padding: 6px 16px;
             font-size: 13px;
             font-weight: bold;
-            min-height: 24px;
-            min-width: 140px;
+            min-height: 28px;
+            min-width: 0px;
         }
 
         QPushButton[navButton="true"]:hover {

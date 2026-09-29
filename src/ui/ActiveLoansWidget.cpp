@@ -42,22 +42,27 @@ void ActiveLoansWidget::setupUi() {
     topBar->addWidget(m_counterLabel);
     topBar->addStretch();
 
-    // Search bar
+    mainLayout->addLayout(topBar);
+
+    // Controls get their own row so they remain usable at narrower widths.
+    QHBoxLayout* controlsBar = new QHBoxLayout();
+    controlsBar->setSpacing(10);
     m_searchEdit = new QLineEdit(this);
-    m_searchEdit->setPlaceholderText("جستجوی سریع (شماره لپ‌تاپ، دبیر، تحویل‌گیرنده)...");
-    m_searchEdit->setFixedWidth(320);
+    m_searchEdit->setPlaceholderText("جستجو در لپ‌تاپ، دبیر، تحویل‌گیرنده و یادداشت...");
+    m_searchEdit->setMinimumWidth(180);
+    m_searchEdit->setMaximumWidth(360);
     connect(m_searchEdit, &QLineEdit::textChanged, this, &ActiveLoansWidget::onSearchChanged);
-    topBar->addWidget(m_searchEdit);
+    controlsBar->addWidget(m_searchEdit, 1);
 
     QPushButton* refreshBtn = new QPushButton("بروزرسانی لیست", this);
     connect(refreshBtn, &QPushButton::clicked, this, &ActiveLoansWidget::refreshData);
-    topBar->addWidget(refreshBtn);
+    controlsBar->addWidget(refreshBtn);
 
-    mainLayout->addLayout(topBar);
+    mainLayout->addLayout(controlsBar);
 
     // Table
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(9);
+    m_table->setColumnCount(10);
     m_table->setHorizontalHeaderLabels({
         "ردیف",
         "شماره لپ‌تاپ",
@@ -67,6 +72,7 @@ void ActiveLoansWidget::setupUi() {
         "نام تحویل گیرنده",
         "زمان امانت",
         "وضعیت اولیه هنگام تحویل",
+        "یادداشت",
         "عملیات تحویل گرفتن"
     });
 
@@ -77,13 +83,16 @@ void ActiveLoansWidget::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
-    m_table->horizontalHeader()->setSectionResizeMode(7, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::Stretch);
+    m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::ResizeToContents);
 
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_table->setAlternatingRowColors(true);
+    m_table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
     mainLayout->addWidget(m_table);
 }
@@ -141,6 +150,8 @@ void ActiveLoansWidget::populateTable() {
 
         // Condition
         QTableWidgetItem* condItem = new QTableWidgetItem(rec.initialCondition);
+        QTableWidgetItem* notesItem = new QTableWidgetItem(rec.notes.isEmpty() ? "-" : rec.notes);
+        notesItem->setToolTip(rec.notes);
 
         m_table->setItem(row, 0, idxItem);
         m_table->setItem(row, 1, numItem);
@@ -150,6 +161,7 @@ void ActiveLoansWidget::populateTable() {
         m_table->setItem(row, 5, recipientItem);
         m_table->setItem(row, 6, timeItem);
         m_table->setItem(row, 7, condItem);
+        m_table->setItem(row, 8, notesItem);
 
         // Action button "تحویل گرفتن"
         QWidget* btnWidget = new QWidget(this);
@@ -167,9 +179,9 @@ void ActiveLoansWidget::populateTable() {
         });
 
         btnLayout->addWidget(returnBtn);
-        m_table->setCellWidget(row, 8, btnWidget);
+        m_table->setCellWidget(row, 9, btnWidget);
 
-        m_table->setRowHeight(row, 46);
+        m_table->setRowHeight(row, 48);
     }
 }
 

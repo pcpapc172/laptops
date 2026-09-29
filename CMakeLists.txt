@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(LaptopManager VERSION 1.0.0 LANGUAGES CXX)
+project(LaptopManager VERSION 1.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -87,6 +87,7 @@ add_executable(snapshot
     src/ui/SettingsWidget.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
+    resources.qrc
 )
 target_link_libraries(snapshot PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
@@ -94,4 +95,3 @@ target_link_libraries(snapshot PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
     Qt${QT_VERSION_MAJOR}::Sql
 )
-

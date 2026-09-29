@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QTimer>
 #include <QPixmap>
+#include <QFontDatabase>
 #include "../src/ui/MainWindow.h"
 #include "../src/ui/StyleHelper.h"
 #include "../src/db/DatabaseManager.h"
@@ -10,16 +11,9 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setLayoutDirection(Qt::RightToLeft);
 
-    QFont font;
-    QStringList fontFamilies = {
-        "Noto Sans Arabic UI",
-        "Noto Sans Arabic",
-        "Vazirmatn",
-        "Tahoma",
-        "Segoe UI",
-        "sans-serif"
-    };
-    font.setFamilies(fontFamilies);
+    QFontDatabase::addApplicationFont(":/fonts/Vazir.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Vazir-Bold.ttf");
+    QFont font("Vazir");
     font.setPointSize(10);
     app.setFont(font);
 

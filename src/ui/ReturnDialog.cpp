@@ -1,6 +1,7 @@
 #include "ReturnDialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
@@ -12,7 +13,7 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
     : QDialog(parent), m_record(record)
 {
     setWindowTitle("ثبت بازگشت و تحویل لپ‌تاپ");
-    setMinimumWidth(480);
+    setMinimumSize(480, 520);
     setLayoutDirection(Qt::RightToLeft);
     setModal(true);
 
@@ -40,8 +41,10 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
         QHBoxLayout* row = new QHBoxLayout();
         QLabel* lbl = new QLabel(label, infoCard);
         lbl->setProperty("secondary", true);
-        lbl->setFixedWidth(110);
+        lbl->setMinimumWidth(110);
+        lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         QLabel* value = new QLabel(val, infoCard);
+        value->setWordWrap(true);
         value->setStyleSheet("font-weight: bold; color: #202124;");
         row->addWidget(lbl);
         row->addWidget(value);
@@ -56,6 +59,7 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
     addInfoRow("تحویل گیرنده:", m_record.recipientName);
     addInfoRow("زمان امانت:", DateTimeUtils::formatJalaliDateTime(m_record.lendTime));
     addInfoRow("وضعیت اولیه:", m_record.initialCondition);
+    addInfoRow("یادداشت ثبت‌شده:", m_record.notes.isEmpty() ? "-" : m_record.notes);
 
     mainLayout->addWidget(infoCard);
 
@@ -81,8 +85,9 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
     mainLayout->addWidget(m_conditionEdit);
 
     // Quick tag chips for condition
-    QHBoxLayout* chipLayout = new QHBoxLayout();
-    chipLayout->setSpacing(6);
+    QGridLayout* chipLayout = new QGridLayout();
+    chipLayout->setHorizontalSpacing(6);
+    chipLayout->setVerticalSpacing(6);
     QStringList quickTags = {
         "سالم و کامل با شارژر",
         "سالم بدون شارژر",
@@ -90,15 +95,16 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
         "مشکل نرم‌افزاری/روشن نشدن",
         "باتری خالی"
     };
-    for (const QString& tag : quickTags) {
+    for (int i = 0; i < quickTags.size(); ++i) {
+        const QString& tag = quickTags[i];
         QPushButton* chip = new QPushButton(tag, this);
         chip->setProperty("chip", true);
+        chip->setMinimumHeight(36);
         connect(chip, &QPushButton::clicked, this, [this, tag]() {
             m_conditionEdit->setText(tag);
         });
-        chipLayout->addWidget(chip);
+        chipLayout->addWidget(chip, i / 2, i % 2);
     }
-    chipLayout->addStretch();
     mainLayout->addLayout(chipLayout);
 
     // Input: Notes
@@ -122,6 +128,7 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
     QPushButton* submitBtn = new QPushButton("ثبت تحویل و بایگانی", this);
     submitBtn->setProperty("success", true);
     submitBtn->setMinimumWidth(150);
+    submitBtn->setMinimumHeight(42);
     connect(submitBtn, &QPushButton::clicked, this, &ReturnDialog::onAccept);
 
     buttonLayout->addStretch();

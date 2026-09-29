@@ -297,10 +297,11 @@ QList<LoanRecord> DatabaseManager::getActiveLoans(const QString& searchTerm) {
         query.prepare(R"(
             SELECT * FROM loans 
             WHERE status = 'ACTIVE' 
-              AND (laptop_number LIKE :term 
+              AND (laptop_number LIKE :term
                    OR teacher_name LIKE :term 
                    OR recipient_name LIKE :term
-                   OR grade_level LIKE :term)
+                   OR grade_level LIKE :term
+                   OR notes LIKE :term)
             ORDER BY id DESC
         )");
         query.bindValue(":term", "%" + searchTerm.trimmed() + "%");
@@ -329,7 +330,8 @@ QList<LoanRecord> DatabaseManager::getDeliveredLoans(const QString& searchTerm) 
                    OR teacher_name LIKE :term 
                    OR recipient_name LIKE :term
                    OR returner_name LIKE :term
-                   OR grade_level LIKE :term)
+                   OR grade_level LIKE :term
+                   OR notes LIKE :term)
             ORDER BY return_time DESC, id DESC
         )");
         query.bindValue(":term", "%" + searchTerm.trimmed() + "%");
@@ -355,7 +357,7 @@ QList<LoanRecord> DatabaseManager::getAllLoans(const QString& searchTerm, int be
         sql += QString(" AND status = '%1'").arg(statusFilter);
     }
     if (!searchTerm.trimmed().isEmpty()) {
-        sql += " AND (laptop_number LIKE :term OR teacher_name LIKE :term OR recipient_name LIKE :term OR returner_name LIKE :term OR grade_level LIKE :term OR initial_condition LIKE :term OR return_condition LIKE :term)";
+        sql += " AND (laptop_number LIKE :term OR teacher_name LIKE :term OR recipient_name LIKE :term OR returner_name LIKE :term OR grade_level LIKE :term OR initial_condition LIKE :term OR return_condition LIKE :term OR notes LIKE :term)";
     }
     sql += " ORDER BY id DESC";
 

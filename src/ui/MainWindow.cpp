@@ -54,7 +54,7 @@ void MainWindow::setupUi() {
     // ================= 1. TOP APP BAR =================
     QFrame* topAppBar = new QFrame(this);
     topAppBar->setObjectName("topAppBar");
-    topAppBar->setFixedHeight(58);
+    topAppBar->setMinimumHeight(58);
 
     QHBoxLayout* topBarLayout = new QHBoxLayout(topAppBar);
     topBarLayout->setContentsMargins(24, 0, 24, 0);
@@ -93,24 +93,26 @@ void MainWindow::setupUi() {
     // ================= 2. NAVIGATION BAR =================
     QFrame* navBarFrame = new QFrame(this);
     navBarFrame->setObjectName("navBarFrame");
-    navBarFrame->setFixedHeight(52);
+    navBarFrame->setMinimumHeight(56);
 
     QHBoxLayout* navLayout = new QHBoxLayout(navBarFrame);
     navLayout->setContentsMargins(20, 0, 20, 0);
-    navLayout->setSpacing(10);
+    navLayout->setSpacing(4);
 
     QStringList navTitles = {
-        "ثبت امانت جدید",
-        "امانت‌های فعال (بازگردانده نشده)",
+        "ثبت امانت",
+        "امانت‌های فعال",
         "تحویل داده شده‌ها",
-        "بایگانی و تاریخچه کامل",
-        "تنظیمات (معلمان و پایه‌ها)"
+        "بایگانی",
+        "تنظیمات"
     };
 
     for (int i = 0; i < navTitles.size(); ++i) {
         QPushButton* btn = new QPushButton(navTitles[i], navBarFrame);
         btn->setProperty("navButton", true);
         btn->setCursor(Qt::PointingHandCursor);
+        btn->setMinimumWidth(0);
+        btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         if (i == 0) {
             btn->setProperty("active", true);
         }
@@ -118,9 +120,8 @@ void MainWindow::setupUi() {
             switchPage(i);
         });
         m_navButtons.append(btn);
-        navLayout->addWidget(btn);
+        navLayout->addWidget(btn, 1);
     }
-    navLayout->addStretch();
 
     rootLayout->addWidget(navBarFrame);
 
@@ -234,13 +235,17 @@ void MainWindow::applyTheme(bool isDark) {
     for (QWidget* widget : comboBoxes) {
         auto* combo = qobject_cast<QComboBox*>(widget);
         if (!combo) continue;
-        combo->setMaxVisibleItems(5);
+        combo->setMaxVisibleItems(8);
+        combo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+        combo->setMinimumContentsLength(8);
         combo->setPalette(palette);
         if (combo->lineEdit()) combo->lineEdit()->setPalette(palette);
         QAbstractItemView* popup = combo->view();
         popup->setPalette(palette);
         popup->setStyleSheet(popupStyle);
-        popup->setMaximumHeight(220);
+        popup->setTextElideMode(Qt::ElideRight);
+        popup->setMinimumWidth(qMax(combo->width(), popup->minimumWidth()));
+        popup->setMaximumHeight(320);
     }
 
     // Re-evaluate property-based styles such as primary action buttons when the

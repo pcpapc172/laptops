@@ -41,7 +41,7 @@ void SettingsWidget::setupUi() {
     // ================= CARD 1: THEME / DARK MODE =================
     QFrame* themeCard = new QFrame(scrollContent);
     themeCard->setProperty("card", true);
-    themeCard->setFixedWidth(820);
+    themeCard->setMaximumWidth(820);
 
     QVBoxLayout* themeCardLayout = new QVBoxLayout(themeCard);
     themeCardLayout->setContentsMargins(28, 22, 28, 22);
@@ -83,7 +83,7 @@ void SettingsWidget::setupUi() {
     // ================= CARD 2: PRESET TEACHERS & GRADES =================
     QFrame* presetsCard = new QFrame(scrollContent);
     presetsCard->setProperty("card", true);
-    presetsCard->setFixedWidth(820);
+    presetsCard->setMaximumWidth(820);
 
     QVBoxLayout* presetsCardLayout = new QVBoxLayout(presetsCard);
     presetsCardLayout->setContentsMargins(28, 24, 28, 24);

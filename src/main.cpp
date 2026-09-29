@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QFont>
+#include <QFontDatabase>
 #include <QStringList>
 #include "ui/MainWindow.h"
 #include "ui/StyleHelper.h"
@@ -15,18 +16,10 @@ int main(int argc, char *argv[]) {
     // RTL for Persian
     app.setLayoutDirection(Qt::RightToLeft);
 
-    // Font setup with standard Persian system fallbacks
-    QFont font;
-    QStringList fontFamilies = {
-        "Noto Sans Arabic UI",
-        "Noto Sans Arabic",
-        "Vazirmatn",
-        "Tahoma",
-        "Segoe UI",
-        "DejaVu Sans",
-        "sans-serif"
-    };
-    font.setFamilies(fontFamilies);
+    // Bundle Vazir so Persian text metrics do not depend on installed system fonts.
+    QFontDatabase::addApplicationFont(":/fonts/Vazir.ttf");
+    QFontDatabase::addApplicationFont(":/fonts/Vazir-Bold.ttf");
+    QFont font("Vazir");
     font.setPointSize(10);
     app.setFont(font);
 

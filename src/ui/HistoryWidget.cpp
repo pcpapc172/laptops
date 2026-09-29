@@ -44,6 +44,7 @@ void HistoryWidget::setupUi() {
     topBar->addWidget(pageTitle);
     topBar->addWidget(m_counterLabel);
     topBar->addStretch();
+    mainLayout->addLayout(topBar);
 
     // Period filter
     QLabel* periodFilterLabel = new QLabel("فیلتر زنگ:", this);
@@ -69,7 +70,8 @@ void HistoryWidget::setupUi() {
     // Search bar
     m_searchEdit = new QLineEdit(this);
     m_searchEdit->setPlaceholderText("جستجو در کل سوابق...");
-    m_searchEdit->setFixedWidth(240);
+    m_searchEdit->setMinimumWidth(150);
+    m_searchEdit->setMaximumWidth(320);
     connect(m_searchEdit, &QLineEdit::textChanged, this, &HistoryWidget::onFilterChanged);
 
     // Export CSV button
@@ -80,19 +82,20 @@ void HistoryWidget::setupUi() {
     QPushButton* refreshBtn = new QPushButton("بروزرسانی", this);
     connect(refreshBtn, &QPushButton::clicked, this, &HistoryWidget::refreshData);
 
-    topBar->addWidget(periodFilterLabel);
-    topBar->addWidget(m_periodFilterCombo);
-    topBar->addWidget(statusFilterLabel);
-    topBar->addWidget(m_statusFilterCombo);
-    topBar->addWidget(m_searchEdit);
-    topBar->addWidget(exportBtn);
-    topBar->addWidget(refreshBtn);
-
-    mainLayout->addLayout(topBar);
+    QHBoxLayout* filtersBar = new QHBoxLayout();
+    filtersBar->setSpacing(8);
+    filtersBar->addWidget(periodFilterLabel);
+    filtersBar->addWidget(m_periodFilterCombo);
+    filtersBar->addWidget(statusFilterLabel);
+    filtersBar->addWidget(m_statusFilterCombo);
+    filtersBar->addWidget(m_searchEdit, 1);
+    filtersBar->addWidget(exportBtn);
+    filtersBar->addWidget(refreshBtn);
+    mainLayout->addLayout(filtersBar);
 
     // Table
     m_table = new QTableWidget(this);
-    m_table->setColumnCount(12);
+    m_table->setColumnCount(13);
     m_table->setHorizontalHeaderLabels({
         "کد",
         "وضعیت",
@@ -104,6 +107,7 @@ void HistoryWidget::setupUi() {
         "تحویل دهنده",
         "وضعیت اولیه",
         "وضعیت بعد از تحویل",
+        "یادداشت",
         "تاریخ و زمان امانت",
         "عملیات"
     });
@@ -118,8 +122,9 @@ void HistoryWidget::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(10, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(10, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(11, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(12, QHeaderView::ResizeToContents);
 
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -208,6 +213,8 @@ void HistoryWidget::populateTable() {
         // Time
         QTableWidgetItem* timeItem = new QTableWidgetItem(DateTimeUtils::formatJalaliDateTime(rec.lendTime));
         timeItem->setTextAlignment(Qt::AlignCenter);
+        QTableWidgetItem* notesItem = new QTableWidgetItem(rec.notes.isEmpty() ? "-" : rec.notes);
+        notesItem->setToolTip(rec.notes);
 
         m_table->setItem(row, 0, idItem);
         m_table->setCellWidget(row, 1, statusWidget);
@@ -219,7 +226,8 @@ void HistoryWidget::populateTable() {
         m_table->setItem(row, 7, returnerItem);
         m_table->setItem(row, 8, initCondItem);
         m_table->setItem(row, 9, retCondItem);
-        m_table->setItem(row, 10, timeItem);
+        m_table->setItem(row, 10, notesItem);
+        m_table->setItem(row, 11, timeItem);
 
         // Actions
         QWidget* actWidget = new QWidget(this);
@@ -230,17 +238,16 @@ void HistoryWidget::populateTable() {
         QPushButton* delBtn = new QPushButton("حذف", actWidget);
         delBtn->setToolTip("حذف رکورد از بایگانی");
         delBtn->setProperty("danger", true);
-        delBtn->setMinimumWidth(76);
-        delBtn->setFixedHeight(32);
+        delBtn->setMinimumSize(76, 36);
         int recId = rec.id;
         connect(delBtn, &QPushButton::clicked, this, [this, recId]() {
             onDeleteRecord(recId);
         });
 
         actLayout->addWidget(delBtn);
-        m_table->setCellWidget(row, 11, actWidget);
+        m_table->setCellWidget(row, 12, actWidget);
 
-        m_table->setRowHeight(row, 48);
+        m_table->setRowHeight(row, 50);
     }
 }
 

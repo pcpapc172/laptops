@@ -3,4 +3,8 @@
         <file alias="chevron-light.xpm">resources/chevron-light.xpm</file>
         <file alias="chevron-dark.xpm">resources/chevron-dark.xpm</file>
     </qresource>
+    <qresource prefix="/fonts">
+        <file alias="Vazir.ttf">resources/fonts/Vazir.ttf</file>
+        <file alias="Vazir-Bold.ttf">resources/fonts/Vazir-Bold.ttf</file>
+    </qresource>
 </RCC>

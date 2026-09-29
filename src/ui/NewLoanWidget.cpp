@@ -35,7 +35,7 @@ NewLoanWidget::NewLoanWidget(QWidget* parent)
     // Main Google Card Container
     QFrame* card = new QFrame(scrollContent);
     card->setProperty("card", true);
-    card->setFixedWidth(820);
+    card->setMaximumWidth(820);
 
     QVBoxLayout* cardLayout = new QVBoxLayout(card);
     cardLayout->setContentsMargins(32, 20, 32, 20);
@@ -82,7 +82,7 @@ NewLoanWidget::NewLoanWidget(QWidget* parent)
         QLabel* lbl = new QLabel(labelText, blockWidget);
         lbl->setProperty("fieldLabel", true);
 
-        inputWidget->setFixedHeight(42);
+        inputWidget->setMinimumHeight(42);
         inputWidget->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 
         block->addWidget(lbl);
@@ -123,7 +123,7 @@ NewLoanWidget::NewLoanWidget(QWidget* parent)
     lapLbl->setProperty("fieldLabel", true);
 
     m_laptopNumberEdit = new QLineEdit(laptopBlockWidget);
-    m_laptopNumberEdit->setFixedHeight(42);
+    m_laptopNumberEdit->setMinimumHeight(42);
     m_laptopNumberEdit->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
     m_laptopNumberEdit->setPlaceholderText("مثال: ۱۲ یا Laptop-05");
     connect(m_laptopNumberEdit, &QLineEdit::textChanged, this, &NewLoanWidget::onLaptopNumberChanged);
@@ -157,13 +157,14 @@ NewLoanWidget::NewLoanWidget(QWidget* parent)
 
     // Row 5: Quick chips in their own dedicated row
     QWidget* chipsWidget = new QWidget(card);
-    QHBoxLayout* chipsLayout = new QHBoxLayout(chipsWidget);
+    QGridLayout* chipsLayout = new QGridLayout(chipsWidget);
     chipsLayout->setContentsMargins(0, 0, 0, 4);
-    chipsLayout->setSpacing(8);
+    chipsLayout->setHorizontalSpacing(8);
+    chipsLayout->setVerticalSpacing(6);
 
     QLabel* chipsHint = new QLabel("انتخاب سریع:", chipsWidget);
     chipsHint->setProperty("secondary", true);
-    chipsLayout->addWidget(chipsHint);
+    chipsLayout->addWidget(chipsHint, 0, 0, 1, 2, Qt::AlignRight);
 
     QStringList presets = {
         "سالم با شارژر",
@@ -171,16 +172,17 @@ NewLoanWidget::NewLoanWidget(QWidget* parent)
         "شارژ باتری ۵۰٪",
         "خط و خش جزئی"
     };
-    for (const QString& tag : presets) {
+    for (int i = 0; i < presets.size(); ++i) {
+        const QString& tag = presets[i];
         QPushButton* chip = new QPushButton(tag, chipsWidget);
         chip->setProperty("chip", true);
         chip->setCursor(Qt::PointingHandCursor);
+        chip->setMinimumHeight(36);
         connect(chip, &QPushButton::clicked, this, [this, tag]() {
             m_conditionEdit->setText(tag);
         });
-        chipsLayout->addWidget(chip);
+        chipsLayout->addWidget(chip, 1 + i / 2, i % 2, Qt::AlignRight);
     }
-    chipsLayout->addStretch();
     cardLayout->addWidget(chipsWidget);
 
     // Row 6: Notes (Full width)
