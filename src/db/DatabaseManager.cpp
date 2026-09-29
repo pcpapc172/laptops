@@ -265,6 +265,16 @@ bool DatabaseManager::updateLoan(const LoanRecord& record) {
     return query.exec();
 }
 
+bool DatabaseManager::updateLoanNotes(int id, const QString& notes) {
+    if (!m_db.isOpen()) return false;
+
+    QSqlQuery query(m_db);
+    query.prepare("UPDATE loans SET notes = :notes WHERE id = :id");
+    query.bindValue(":notes", notes.trimmed());
+    query.bindValue(":id", id);
+    return query.exec();
+}
+
 static LoanRecord parseRecordFromQuery(QSqlQuery& q) {
     LoanRecord r;
     r.id = q.value("id").toInt();

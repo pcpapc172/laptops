@@ -19,6 +19,7 @@ public:
     bool returnLoan(int id, const QString& returnerName, const QString& returnCondition, const QString& notes = QString());
     bool deleteLoan(int id);
     bool updateLoan(const LoanRecord& record);
+    bool updateLoanNotes(int id, const QString& notes);
 
     QList<LoanRecord> getActiveLoans(const QString& searchTerm = QString());
     QList<LoanRecord> getDeliveredLoans(const QString& searchTerm = QString());

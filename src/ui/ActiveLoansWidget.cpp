@@ -94,7 +94,12 @@ void ActiveLoansWidget::setupUi() {
     m_table->setAlternatingRowColors(true);
     m_table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    NoteDialog::enableTableNoteDoubleClick(m_table, 8, this);
+    NoteDialog::enableTableNoteDoubleClick(m_table, 8, this,
+        [this](int id, const QString& note) {
+            if (!DatabaseManager::instance().updateLoanNotes(id, note)) return false;
+            refreshData();
+            return true;
+        });
 
     mainLayout->addWidget(m_table);
 }
@@ -154,7 +159,8 @@ void ActiveLoansWidget::populateTable() {
         QTableWidgetItem* condItem = new QTableWidgetItem(rec.initialCondition);
         QTableWidgetItem* notesItem = new QTableWidgetItem(rec.notes.isEmpty() ? "-" : rec.notes);
         notesItem->setData(Qt::UserRole, rec.notes);
-        notesItem->setToolTip(rec.notes + "\n\nبرای مشاهده کامل، دوبار کلیک کنید.");
+        notesItem->setData(Qt::UserRole + 1, rec.id);
+        notesItem->setToolTip(rec.notes + "\n\nبرای مشاهده و ویرایش، دوبار کلیک کنید.");
 
         m_table->setItem(row, 0, idxItem);
         m_table->setItem(row, 1, numItem);

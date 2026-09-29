@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QMessageBox>
 #include <QFrame>
+#include "../db/DatabaseManager.h"
 #include "../utils/DateTimeUtils.h"
 
 ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
@@ -45,7 +46,12 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
         lbl->setMinimumWidth(110);
         lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         QLabel* value = fullNote
-            ? static_cast<QLabel*>(new NoteDialog::FullNoteLabel(val, infoCard))
+            ? static_cast<QLabel*>(new NoteDialog::FullNoteLabel(val, infoCard,
+                [this](const QString& note) {
+                    if (!DatabaseManager::instance().updateLoanNotes(m_record.id, note)) return false;
+                    m_record.notes = note.trimmed();
+                    return true;
+                }))
             : new QLabel(val, infoCard);
         value->setWordWrap(true);
         value->setStyleSheet("font-weight: bold; color: #202124;");
