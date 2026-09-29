@@ -247,7 +247,10 @@ bool DatabaseManager::updateLoan(const LoanRecord& record) {
             initial_condition = :initial_condition,
             return_condition = :return_condition,
             returner_name = :returner_name,
-            notes = :notes
+            notes = :notes,
+            status = :status,
+            lend_time = :lend_time,
+            return_time = :return_time
         WHERE id = :id
     )");
 
@@ -260,6 +263,10 @@ bool DatabaseManager::updateLoan(const LoanRecord& record) {
     query.bindValue(":return_condition", record.returnCondition.trimmed());
     query.bindValue(":returner_name", record.returnerName.trimmed());
     query.bindValue(":notes", record.notes.trimmed());
+    query.bindValue(":status", record.status);
+    query.bindValue(":lend_time", record.lendTime.toString(Qt::ISODate));
+    query.bindValue(":return_time", record.returnTime.isValid()
+                    ? record.returnTime.toString(Qt::ISODate) : QVariant());
     query.bindValue(":id", record.id);
 
     return query.exec();

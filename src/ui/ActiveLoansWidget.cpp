@@ -10,6 +10,7 @@
 #include <QFrame>
 #include "ReturnDialog.h"
 #include "NoteDialog.h"
+#include "RecordContextMenu.h"
 #include "../db/DatabaseManager.h"
 #include "../utils/DateTimeUtils.h"
 
@@ -94,6 +95,10 @@ void ActiveLoansWidget::setupUi() {
     m_table->setAlternatingRowColors(true);
     m_table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_table->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+    RecordContextMenu::enable(m_table, &m_currentRecords, this, [this]() {
+        refreshData();
+        emit loanStatusChanged();
+    });
     NoteDialog::enableTableNoteDoubleClick(m_table, 8, this,
         [this](int id, const QString& note) {
             if (!DatabaseManager::instance().updateLoanNotes(id, note)) return false;
@@ -189,6 +194,10 @@ void ActiveLoansWidget::populateTable() {
 
         btnLayout->addWidget(returnBtn);
         m_table->setCellWidget(row, 9, btnWidget);
+        RecordContextMenu::attachToCellWidget(m_table, &m_currentRecords, this, [this]() {
+            refreshData();
+            emit loanStatusChanged();
+        }, btnWidget);
 
         m_table->setRowHeight(row, 48);
     }

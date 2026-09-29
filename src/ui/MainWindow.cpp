@@ -168,7 +168,14 @@ void MainWindow::setupConnections() {
     });
 
     connect(m_deliveredLoansWidget, &DeliveredLoansWidget::recordsChanged, this, [this]() {
+        m_activeLoansWidget->refreshData();
         m_historyWidget->refreshData();
+        updateHeaderStats();
+    });
+
+    connect(m_historyWidget, &HistoryWidget::recordsChanged, this, [this]() {
+        m_activeLoansWidget->refreshData();
+        m_deliveredLoansWidget->refreshData();
         updateHeaderStats();
     });
 

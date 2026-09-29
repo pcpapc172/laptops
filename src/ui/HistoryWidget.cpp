@@ -1,5 +1,6 @@
 #include "HistoryWidget.h"
 #include "NoteDialog.h"
+#include "RecordContextMenu.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -139,6 +140,10 @@ void HistoryWidget::setupUi() {
             refreshData();
             return true;
         });
+    RecordContextMenu::enable(m_table, &m_currentRecords, this, [this]() {
+        refreshData();
+        emit recordsChanged();
+    });
 
     mainLayout->addWidget(m_table);
 }
@@ -227,6 +232,10 @@ void HistoryWidget::populateTable() {
 
         m_table->setItem(row, 0, idItem);
         m_table->setCellWidget(row, 1, statusWidget);
+        RecordContextMenu::attachToCellWidget(m_table, &m_currentRecords, this, [this]() {
+            refreshData();
+            emit recordsChanged();
+        }, statusWidget);
         m_table->setItem(row, 2, numItem);
         m_table->setItem(row, 3, periodItem);
         m_table->setItem(row, 4, gradeItem);
@@ -255,6 +264,10 @@ void HistoryWidget::populateTable() {
 
         actLayout->addWidget(delBtn);
         m_table->setCellWidget(row, 12, actWidget);
+        RecordContextMenu::attachToCellWidget(m_table, &m_currentRecords, this, [this]() {
+            refreshData();
+            emit recordsChanged();
+        }, actWidget);
 
         m_table->setRowHeight(row, 50);
     }

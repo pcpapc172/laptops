@@ -15,6 +15,9 @@ public:
 
     void refreshData();
 
+signals:
+    void recordsChanged();
+
 private slots:
     void onFilterChanged();
     void onExportCsv();

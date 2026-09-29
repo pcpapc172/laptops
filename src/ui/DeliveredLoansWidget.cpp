@@ -1,5 +1,6 @@
 #include "DeliveredLoansWidget.h"
 #include "NoteDialog.h"
+#include "RecordContextMenu.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -105,6 +106,10 @@ void DeliveredLoansWidget::setupUi() {
             refreshData();
             return true;
         });
+    RecordContextMenu::enable(m_table, &m_currentRecords, this, [this]() {
+        refreshData();
+        emit recordsChanged();
+    });
 
     mainLayout->addWidget(m_table);
 }
@@ -208,6 +213,10 @@ void DeliveredLoansWidget::populateTable() {
         });
         actionLayout->addWidget(deleteButton);
         m_table->setCellWidget(row, 12, actionWidget);
+        RecordContextMenu::attachToCellWidget(m_table, &m_currentRecords, this, [this]() {
+            refreshData();
+            emit recordsChanged();
+        }, actionWidget);
 
         m_table->setRowHeight(row, 48);
     }
