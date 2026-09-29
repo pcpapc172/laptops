@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(LaptopManager VERSION 1.1.0 LANGUAGES CXX)
+project(LaptopManager VERSION 1.1.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,6 +22,7 @@ set(SOURCES
     src/ui/StyleHelper.h
     src/ui/ReturnDialog.h
     src/ui/ReturnDialog.cpp
+    src/ui/NoteDialog.h
     src/ui/NewLoanWidget.h
     src/ui/NewLoanWidget.cpp
     src/ui/ActiveLoansWidget.h
@@ -75,6 +76,7 @@ add_executable(snapshot
     src/ui/StyleHelper.h
     src/ui/ReturnDialog.h
     src/ui/ReturnDialog.cpp
+    src/ui/NoteDialog.h
     src/ui/NewLoanWidget.h
     src/ui/NewLoanWidget.cpp
     src/ui/ActiveLoansWidget.h

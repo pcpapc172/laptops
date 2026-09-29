@@ -1,4 +1,5 @@
 #include "HistoryWidget.h"
+#include "NoteDialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -132,6 +133,7 @@ void HistoryWidget::setupUi() {
     m_table->setAlternatingRowColors(true);
     m_table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
     m_table->horizontalHeader()->setMinimumSectionSize(72);
+    NoteDialog::enableTableNoteDoubleClick(m_table, 10, this);
 
     mainLayout->addWidget(m_table);
 }
@@ -214,7 +216,8 @@ void HistoryWidget::populateTable() {
         QTableWidgetItem* timeItem = new QTableWidgetItem(DateTimeUtils::formatJalaliDateTime(rec.lendTime));
         timeItem->setTextAlignment(Qt::AlignCenter);
         QTableWidgetItem* notesItem = new QTableWidgetItem(rec.notes.isEmpty() ? "-" : rec.notes);
-        notesItem->setToolTip(rec.notes);
+        notesItem->setData(Qt::UserRole, rec.notes);
+        notesItem->setToolTip(rec.notes + "\n\nبرای مشاهده کامل، دوبار کلیک کنید.");
 
         m_table->setItem(row, 0, idItem);
         m_table->setCellWidget(row, 1, statusWidget);

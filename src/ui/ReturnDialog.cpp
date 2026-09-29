@@ -1,4 +1,5 @@
 #include "ReturnDialog.h"
+#include "NoteDialog.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -37,13 +38,15 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
     infoLayout->setSpacing(6);
     infoLayout->setContentsMargins(14, 12, 14, 12);
 
-    auto addInfoRow = [&](const QString& label, const QString& val) {
+    auto addInfoRow = [&](const QString& label, const QString& val, bool fullNote = false) {
         QHBoxLayout* row = new QHBoxLayout();
         QLabel* lbl = new QLabel(label, infoCard);
         lbl->setProperty("secondary", true);
         lbl->setMinimumWidth(110);
         lbl->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
-        QLabel* value = new QLabel(val, infoCard);
+        QLabel* value = fullNote
+            ? static_cast<QLabel*>(new NoteDialog::FullNoteLabel(val, infoCard))
+            : new QLabel(val, infoCard);
         value->setWordWrap(true);
         value->setStyleSheet("font-weight: bold; color: #202124;");
         row->addWidget(lbl);
@@ -59,7 +62,7 @@ ReturnDialog::ReturnDialog(const LoanRecord& record, QWidget* parent)
     addInfoRow("تحویل گیرنده:", m_record.recipientName);
     addInfoRow("زمان امانت:", DateTimeUtils::formatJalaliDateTime(m_record.lendTime));
     addInfoRow("وضعیت اولیه:", m_record.initialCondition);
-    addInfoRow("یادداشت ثبت‌شده:", m_record.notes.isEmpty() ? "-" : m_record.notes);
+    addInfoRow("یادداشت ثبت‌شده:", m_record.notes.isEmpty() ? "-" : m_record.notes, true);
 
     mainLayout->addWidget(infoCard);
 
