@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(LaptopManager VERSION 1.2.2 LANGUAGES CXX)
+project(LaptopManager VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,6 +19,7 @@ set(SOURCES
     src/utils/DateTimeUtils.h
     src/db/DatabaseManager.h
     src/db/DatabaseManager.cpp
+    src/ui/StyledComboBox.h
     src/ui/StyleHelper.h
     src/ui/ReturnDialog.h
     src/ui/ReturnDialog.cpp
@@ -75,6 +76,7 @@ add_executable(snapshot
     src/utils/DateTimeUtils.h
     src/db/DatabaseManager.h
     src/db/DatabaseManager.cpp
+    src/ui/StyledComboBox.h
     src/ui/StyleHelper.h
     src/ui/ReturnDialog.h
     src/ui/ReturnDialog.cpp

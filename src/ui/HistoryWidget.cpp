@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QComboBox>
+#include "StyledComboBox.h"
 #include <QPushButton>
 #include <QTableWidget>
 #include <QHeaderView>
@@ -51,7 +52,7 @@ void HistoryWidget::setupUi() {
     // Period filter
     QLabel* periodFilterLabel = new QLabel("فیلتر زنگ:", this);
     periodFilterLabel->setProperty("secondary", true);
-    m_periodFilterCombo = new QComboBox(this);
+    m_periodFilterCombo = new StyledComboBox(this);
     m_periodFilterCombo->addItem("همه زنگ‌ها", 0);
     m_periodFilterCombo->addItem("زنگ ۱", 1);
     m_periodFilterCombo->addItem("زنگ ۲", 2);
@@ -63,7 +64,7 @@ void HistoryWidget::setupUi() {
     // Status filter
     QLabel* statusFilterLabel = new QLabel("وضعیت:", this);
     statusFilterLabel->setProperty("secondary", true);
-    m_statusFilterCombo = new QComboBox(this);
+    m_statusFilterCombo = new StyledComboBox(this);
     m_statusFilterCombo->addItem("همه وضعیت‌ها", "ALL");
     m_statusFilterCombo->addItem("فقط امانت‌های فعال", "ACTIVE");
     m_statusFilterCombo->addItem("فقط تحویل شده‌ها", "RETURNED");
@@ -126,7 +127,8 @@ void HistoryWidget::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(10, QHeaderView::Stretch);
     m_table->horizontalHeader()->setSectionResizeMode(11, QHeaderView::ResizeToContents);
-    m_table->horizontalHeader()->setSectionResizeMode(12, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(12, QHeaderView::Fixed);
+    m_table->setColumnWidth(12, 108);
 
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -256,7 +258,8 @@ void HistoryWidget::populateTable() {
         QPushButton* delBtn = new QPushButton("حذف", actWidget);
         delBtn->setToolTip("حذف رکورد از بایگانی");
         delBtn->setProperty("danger", true);
-        delBtn->setMinimumSize(76, 36);
+        delBtn->setProperty("tableAction", true);
+        delBtn->setFixedSize(80, 34);
         int recId = rec.id;
         connect(delBtn, &QPushButton::clicked, this, [this, recId]() {
             onDeleteRecord(recId);
@@ -269,7 +272,7 @@ void HistoryWidget::populateTable() {
             emit recordsChanged();
         }, actWidget);
 
-        m_table->setRowHeight(row, 50);
+        m_table->setRowHeight(row, 52);
     }
 }
 

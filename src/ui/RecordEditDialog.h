@@ -2,6 +2,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include "StyledComboBox.h"
 #include <QDateTimeEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -45,7 +46,7 @@ inline bool editRecord(QWidget* parent, LoanRecord& record) {
     notes->setPlainText(record.notes);
     notes->setFixedHeight(110);
 
-    QComboBox* status = new QComboBox(&dialog);
+    QComboBox* status = new StyledComboBox(&dialog);
     status->addItem("در امانت", "ACTIVE");
     status->addItem("تحویل شده", "RETURNED");
     status->setCurrentIndex(record.isActive() ? 0 : 1);

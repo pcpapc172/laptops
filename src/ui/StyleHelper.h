@@ -90,6 +90,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
             }
 
             QComboBox {
+                combobox-popup: 0;
                 background-color: #282a2c;
                 border: 1px solid #444746;
                 border-radius: 8px;
@@ -247,6 +248,13 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 border-color: #f28b82;
             }
 
+            QPushButton[tableAction="true"] {
+                min-height: 32px;
+                max-height: 32px;
+                padding: 0px 10px;
+                border-radius: 6px;
+            }
+
             /* Navigation Buttons */
             QPushButton[navButton="true"] {
                 background-color: transparent;
@@ -343,7 +351,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
             }
 
             QTableWidget::item {
-                padding: 8px 10px;
+                padding: 4px;
                 border-bottom: 1px solid #282a2c;
                 color: #e3e3e3;
             }
@@ -468,6 +476,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
         }
 
         QComboBox {
+            combobox-popup: 0;
             background-color: #ffffff;
             border: 1px solid #bdc1c6;
             border-radius: 8px;
@@ -626,6 +635,13 @@ inline QString getApplicationStyle(bool darkMode = false) {
             border-color: #ea4335;
         }
 
+        QPushButton[tableAction="true"] {
+            min-height: 32px;
+            max-height: 32px;
+            padding: 0px 10px;
+            border-radius: 6px;
+        }
+
         QPushButton[navButton="true"] {
             background-color: transparent;
             color: #5f6368;
@@ -718,7 +734,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
         }
 
         QTableWidget::item {
-            padding: 8px 10px;
+            padding: 4px;
             border-bottom: 1px solid #f1f3f4;
         }
 

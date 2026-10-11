@@ -87,7 +87,8 @@ void ActiveLoansWidget::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(8, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::Fixed);
+    m_table->setColumnWidth(9, 144);
 
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -185,7 +186,8 @@ void ActiveLoansWidget::populateTable() {
 
         QPushButton* returnBtn = new QPushButton("تحویل گرفتن", btnWidget);
         returnBtn->setProperty("success", true);
-        returnBtn->setStyleSheet("background-color: #1e8e3e; color: #ffffff; border: 1px solid #1e8e3e; border-radius: 6px; font-weight: bold; padding: 4px 14px;");
+        returnBtn->setProperty("tableAction", true);
+        returnBtn->setFixedSize(120, 34);
         returnBtn->setCursor(Qt::PointingHandCursor);
         int loanId = rec.id;
         connect(returnBtn, &QPushButton::clicked, this, [this, loanId]() {
@@ -199,7 +201,7 @@ void ActiveLoansWidget::populateTable() {
             emit loanStatusChanged();
         }, btnWidget);
 
-        m_table->setRowHeight(row, 48);
+        m_table->setRowHeight(row, 52);
     }
 }
 

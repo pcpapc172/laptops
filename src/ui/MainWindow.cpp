@@ -220,44 +220,10 @@ void MainWindow::applyTheme(bool isDark) {
     qApp->setPalette(palette);
     qApp->setStyleSheet(StyleHelper::getApplicationStyle(isDark));
 
-    for (QWidget* widget : qApp->allWidgets()) {
-        auto* button = qobject_cast<QPushButton*>(widget);
-        if (!button) continue;
-
-        if (button->property("primary").toBool() || button->objectName() == "submitBtn") {
-            button->setStyleSheet(isDark
-                ? QStringLiteral("QPushButton { background-color:#8ab4f8; color:#001d35; border:1px solid #8ab4f8; border-radius:8px; padding:6px 18px; font-weight:bold; min-height:28px; }")
-                : QStringLiteral("QPushButton { background-color:#1a73e8; color:#ffffff; border:1px solid #1a73e8; border-radius:8px; padding:6px 18px; font-weight:bold; min-height:28px; }"));
-        } else if (button->property("danger").toBool()) {
-            button->setStyleSheet(isDark
-                ? QStringLiteral("QPushButton { background-color:#3c1e1e; color:#f28b82; border:1px solid #6f3333; border-radius:7px; padding:2px 12px; min-height:22px; }")
-                : QStringLiteral("QPushButton { background-color:#fff7f6; color:#c5221f; border:1px solid #f4b8b4; border-radius:7px; padding:2px 12px; min-height:22px; }"));
-        }
-    }
-
-    const QString popupStyle = isDark
-        ? QStringLiteral("QAbstractItemView { background-color: #1e1f20; color: #f1f3f4; border: 1px solid #3c4043; selection-background-color: #004a77; selection-color: #c2e7ff; } QAbstractItemView::item { color: #f1f3f4; min-height: 30px; padding: 5px 10px; } QAbstractItemView::item:selected { background-color: #004a77; color: #c2e7ff; }")
-        : QStringLiteral("QAbstractItemView { background-color: #ffffff; color: #202124; border: 1px solid #dadce0; selection-background-color: #e8f0fe; selection-color: #1967d2; } QAbstractItemView::item { color: #202124; min-height: 30px; padding: 5px 10px; } QAbstractItemView::item:selected { background-color: #e8f0fe; color: #1967d2; }");
-    const auto comboBoxes = qApp->allWidgets();
-    for (QWidget* widget : comboBoxes) {
-        auto* combo = qobject_cast<QComboBox*>(widget);
-        if (!combo) continue;
-        combo->setMaxVisibleItems(8);
-        combo->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
-        combo->setMinimumContentsLength(8);
-        combo->setPalette(palette);
-        if (combo->lineEdit()) combo->lineEdit()->setPalette(palette);
-        QAbstractItemView* popup = combo->view();
-        popup->setPalette(palette);
-        popup->setStyleSheet(popupStyle);
-        popup->setTextElideMode(Qt::ElideRight);
-        popup->setMinimumWidth(qMax(combo->width(), popup->minimumWidth()));
-        popup->setMaximumHeight(320);
-    }
-
+    const auto widgets = qApp->allWidgets();
     // Re-evaluate property-based styles such as primary action buttons when the
     // application theme changes at runtime.
-    for (QWidget* widget : comboBoxes) {
+    for (QWidget* widget : widgets) {
         widget->style()->unpolish(widget);
         widget->style()->polish(widget);
         widget->update();

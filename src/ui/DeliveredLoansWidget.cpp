@@ -92,7 +92,8 @@ void DeliveredLoansWidget::setupUi() {
     m_table->horizontalHeader()->setSectionResizeMode(9, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(10, QHeaderView::ResizeToContents);
     m_table->horizontalHeader()->setSectionResizeMode(11, QHeaderView::Stretch);
-    m_table->horizontalHeader()->setSectionResizeMode(12, QHeaderView::ResizeToContents);
+    m_table->horizontalHeader()->setSectionResizeMode(12, QHeaderView::Fixed);
+    m_table->setColumnWidth(12, 108);
 
     m_table->verticalHeader()->setVisible(false);
     m_table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -205,7 +206,8 @@ void DeliveredLoansWidget::populateTable() {
         actionLayout->setAlignment(Qt::AlignCenter);
         QPushButton* deleteButton = new QPushButton("حذف", actionWidget);
         deleteButton->setProperty("danger", true);
-        deleteButton->setMinimumSize(72, 36);
+        deleteButton->setProperty("tableAction", true);
+        deleteButton->setFixedSize(80, 34);
         deleteButton->setCursor(Qt::PointingHandCursor);
         const int loanId = rec.id;
         connect(deleteButton, &QPushButton::clicked, this, [this, loanId]() {
@@ -218,7 +220,7 @@ void DeliveredLoansWidget::populateTable() {
             emit recordsChanged();
         }, actionWidget);
 
-        m_table->setRowHeight(row, 48);
+        m_table->setRowHeight(row, 52);
     }
 }
 

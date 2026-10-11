@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QComboBox>
+#include "StyledComboBox.h"
 #include <QPushButton>
 #include <QMessageBox>
 #include <QCompleter>
@@ -94,14 +95,14 @@ NewLoanWidget::NewLoanWidget(QWidget* parent)
     QHBoxLayout* row1 = new QHBoxLayout();
     row1->setSpacing(20);
 
-    m_periodCombo = new QComboBox(card);
+    m_periodCombo = new StyledComboBox(card);
     m_periodCombo->addItem("زنگ ۱ (ساعت اول)", 1);
     m_periodCombo->addItem("زنگ ۲ (ساعت دوم)", 2);
     m_periodCombo->addItem("زنگ ۳ (ساعت سوم)", 3);
     m_periodCombo->addItem("زنگ ۴ (ساعت چهارم)", 4);
     m_periodCombo->addItem("زنگ ۵ (ساعت پنجم)", 5);
 
-    m_gradeCombo = new QComboBox(card);
+    m_gradeCombo = new StyledComboBox(card);
     m_gradeCombo->setEditable(true);
     m_gradeCombo->lineEdit()->setPlaceholderText("انتخاب یا تایپ پایه تحصیلی...");
 
@@ -136,7 +137,7 @@ NewLoanWidget::NewLoanWidget(QWidget* parent)
     laptopBlockLayout->addWidget(m_laptopNumberEdit);
     laptopBlockLayout->addWidget(m_statusWarningLabel);
 
-    m_teacherCombo = new QComboBox(card);
+    m_teacherCombo = new StyledComboBox(card);
     m_teacherCombo->setEditable(true);
     m_teacherCombo->lineEdit()->setPlaceholderText("انتخاب از لیست یا تایپ نام دبیر...");
 
