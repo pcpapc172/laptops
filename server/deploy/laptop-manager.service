@@ -1,0 +1,25 @@
+[Unit]
+Description=Laptop Manager shared database API
+After=network.target
+
+[Service]
+Type=simple
+User=laptop-manager
+Group=laptop-manager
+WorkingDirectory=/opt/laptop-manager
+Environment=LAPTOPS_SERVER_DB=/var/lib/laptop-manager/server.db
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/laptop-manager/venv/bin/uvicorn server.asgi:app --host 127.0.0.1 --port 18080 --workers 1 --no-access-log --no-proxy-headers --limit-concurrency 24
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/laptop-manager
+MemoryMax=320M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

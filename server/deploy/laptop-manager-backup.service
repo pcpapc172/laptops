@@ -1,0 +1,13 @@
+[Unit]
+Description=Consistent Laptop Manager database backup
+
+[Service]
+Type=oneshot
+User=laptop-manager
+Group=laptop-manager
+ExecStart=/opt/laptop-manager/server/deploy/backup.sh
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/laptop-manager

@@ -1,4 +1,6 @@
 #include "MainWindow.h"
+#include "../sync/SyncEngine.h"
+#include "../sync/SyncStorage.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -44,6 +46,7 @@ MainWindow::MainWindow(QWidget* parent)
     m_clockTimer->start(1000);
     updateClock();
     updateHeaderStats();
+    SyncEngine::instance().start();
 }
 
 void MainWindow::setupUi() {
@@ -155,9 +158,15 @@ void MainWindow::setupUi() {
     dbLabel->setToolTip(dbPath);
     dbLabel->setStyleSheet("color: #5f6368; font-size: 11px; padding: 2px 8px;");
     sb->addPermanentWidget(dbLabel);
+    connect(&SyncEngine::instance(), &SyncEngine::stateChanged, dbLabel, &QLabel::setText);
 }
 
 void MainWindow::setupConnections() {
+    connect(&SyncEngine::instance(), &SyncEngine::dataChanged, this, [this] {
+        m_activeLoansWidget->refreshData(); m_deliveredLoansWidget->refreshData();
+        m_historyWidget->refreshData(); m_inventoryWidget->refreshTypes();
+        m_newLoanWidget->refreshPresets(); updateHeaderStats();
+    });
     connect(m_newLoanWidget, &NewLoanWidget::loanCreated, this, [this]() {
         m_activeLoansWidget->refreshData();
         m_historyWidget->refreshData();

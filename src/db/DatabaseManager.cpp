@@ -1,3 +1,4 @@
+#include "../sync/SyncStorage.h"
 #include "DatabaseManager.h"
 #include <QSqlQuery>
 #include <QSqlError>
@@ -65,6 +66,7 @@ bool DatabaseManager::initDatabase() {
         return false;
     }
 
+    if (!SyncStorage::initialize(m_db)) return false;
     seedDefaults();
     return true;
 }
@@ -142,6 +144,7 @@ bool DatabaseManager::createTables() {
 }
 
 void DatabaseManager::seedDefaults() {
+    if (!SyncStorage::setting("instance_id").isEmpty()) return;
     seedInventoryTypes();
     // Seed initial grades if empty
     QSqlQuery checkGrades("SELECT COUNT(*) FROM preset_grades", m_db);
@@ -163,6 +166,8 @@ void DatabaseManager::seedDefaults() {
 }
 
 bool DatabaseManager::addLoan(LoanRecord& record) {
+    SyncMutationScope syncScope("addLoan");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen()) return false;
 
     QSqlQuery query(m_db);
@@ -206,6 +211,8 @@ bool DatabaseManager::addLoan(LoanRecord& record) {
 }
 
 bool DatabaseManager::returnLoan(int id, const QString& returnerName, const QString& returnCondition, const QString& notes) {
+    SyncMutationScope syncScope("returnLoan");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen()) return false;
 
     QSqlQuery query(m_db);
@@ -229,6 +236,8 @@ bool DatabaseManager::returnLoan(int id, const QString& returnerName, const QStr
 }
 
 bool DatabaseManager::deleteLoan(int id) {
+    SyncMutationScope syncScope("deleteLoan");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen()) return false;
     QSqlQuery query(m_db);
     query.prepare("DELETE FROM loans WHERE id = :id");
@@ -237,6 +246,8 @@ bool DatabaseManager::deleteLoan(int id) {
 }
 
 bool DatabaseManager::updateLoan(const LoanRecord& record) {
+    SyncMutationScope syncScope("updateLoan");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen()) return false;
 
     QSqlQuery query(m_db);
@@ -276,6 +287,8 @@ bool DatabaseManager::updateLoan(const LoanRecord& record) {
 }
 
 bool DatabaseManager::updateLoanNotes(int id, const QString& notes) {
+    SyncMutationScope syncScope("updateLoanNotes");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen()) return false;
 
     QSqlQuery query(m_db);
@@ -423,6 +436,8 @@ QStringList DatabaseManager::getPresetTeachers() {
 }
 
 bool DatabaseManager::addPresetTeacher(const QString& name) {
+    SyncMutationScope syncScope("addPresetTeacher");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen() || name.trimmed().isEmpty()) return false;
     QSqlQuery query(m_db);
     query.prepare("INSERT OR IGNORE INTO preset_teachers (name) VALUES (:name)");
@@ -431,6 +446,8 @@ bool DatabaseManager::addPresetTeacher(const QString& name) {
 }
 
 bool DatabaseManager::removePresetTeacher(const QString& name) {
+    SyncMutationScope syncScope("removePresetTeacher");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen()) return false;
     QSqlQuery query(m_db);
     query.prepare("DELETE FROM preset_teachers WHERE name = :name");
@@ -452,6 +469,8 @@ QStringList DatabaseManager::getPresetGrades() {
 }
 
 bool DatabaseManager::addPresetGrade(const QString& name) {
+    SyncMutationScope syncScope("addPresetGrade");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen() || name.trimmed().isEmpty()) return false;
     QSqlQuery query(m_db);
     query.prepare("INSERT OR IGNORE INTO preset_grades (name) VALUES (:name)");
@@ -460,6 +479,8 @@ bool DatabaseManager::addPresetGrade(const QString& name) {
 }
 
 bool DatabaseManager::removePresetGrade(const QString& name) {
+    SyncMutationScope syncScope("removePresetGrade");
+    if (!syncScope.allowed()) return false;
     if (!m_db.isOpen()) return false;
     QSqlQuery query(m_db);
     query.prepare("DELETE FROM preset_grades WHERE name = :name");

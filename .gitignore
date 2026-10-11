@@ -38,3 +38,11 @@ compile_commands.json
 laptop_manager
 test_manager
 snapshot
+
+# Server environment and private configuration
+.server-venv/
+__pycache__/
+.pytest_cache/
+.env
+*.pem
+server/data/

@@ -1,3 +1,4 @@
+#include "../sync/SyncStorage.h"
 #include "DatabaseManager.h"
 
 #include <QSqlError>
@@ -122,6 +123,8 @@ QList<StockType> DatabaseManager::getStockTypes() {
 }
 
 bool DatabaseManager::saveStockType(StockType& type) {
+    SyncMutationScope syncScope("saveStockType");
+    if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
     if (type.name.trimmed().isEmpty()) return inventoryFailure("نام نوع کالا را وارد کنید.");
     QSqlQuery q(m_db);
@@ -137,6 +140,8 @@ bool DatabaseManager::saveStockType(StockType& type) {
 }
 
 bool DatabaseManager::removeStockType(int id) {
+    SyncMutationScope syncScope("removeStockType");
+    if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
     QSqlQuery q(m_db);
     q.prepare("DELETE FROM stock_types WHERE id=:id"); q.bindValue(":id",id);
@@ -169,6 +174,8 @@ bool DatabaseManager::appendInventoryEvent(int itemId, const QString& action, in
 }
 
 bool DatabaseManager::saveInventoryItem(InventoryItem& item, const QString& adjustmentReason) {
+    SyncMutationScope syncScope("saveInventoryItem");
+    if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
     if (item.name.trimmed().isEmpty() || item.typeId<=0) return inventoryFailure("نام و نوع کالا را وارد کنید.");
     if (item.total<0 || item.total>MaxQuantity || item.lowStockThreshold<0 || item.lowStockThreshold>MaxQuantity)
@@ -226,6 +233,8 @@ QList<InventoryLoan> DatabaseManager::getInventoryLoans(bool activeOnly) {
 
 bool DatabaseManager::lendInventory(int itemId, int quantity, const QString& borrower,
                                     const QDateTime& dueTime, const QString& notes) {
+    SyncMutationScope syncScope("lendInventory");
+    if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
     if (quantity<=0 || quantity>MaxQuantity || borrower.trimmed().isEmpty()) return inventoryFailure("تعداد و نام تحویل‌گیرنده را وارد کنید.");
     if (dueTime.isValid() && dueTime<QDateTime::currentDateTime()) return inventoryFailure("مهلت بازگشت باید در آینده باشد.");
@@ -245,6 +254,8 @@ bool DatabaseManager::lendInventory(int itemId, int quantity, const QString& bor
 }
 
 bool DatabaseManager::returnInventory(int loanId, int quantity, const QString& returner, const QString& notes) {
+    SyncMutationScope syncScope("returnInventory");
+    if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
     if (quantity<=0 || returner.trimmed().isEmpty()) return inventoryFailure("تعداد و نام تحویل‌دهنده را وارد کنید.");
     if (!m_db.transaction()) return inventoryFailure("امکان شروع ذخیره‌سازی وجود ندارد.");
@@ -282,6 +293,8 @@ QList<MissingStockReport> DatabaseManager::getMissingStockReports(bool unresolve
 
 bool DatabaseManager::reportMissingStock(int itemId, int quantity, const QString& reporter,
                                          const QString& notes, int loanId) {
+    SyncMutationScope syncScope("reportMissingStock");
+    if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
     if (quantity<=0 || quantity>MaxQuantity || reporter.trimmed().isEmpty() || notes.trimmed().isEmpty())
         return inventoryFailure("تعداد، نام گزارش‌دهنده و توضیح مفقودی را وارد کنید.");
@@ -311,6 +324,8 @@ bool DatabaseManager::reportMissingStock(int itemId, int quantity, const QString
 }
 
 bool DatabaseManager::recoverMissingStock(int reportId, int quantity, const QString& person, const QString& notes) {
+    SyncMutationScope syncScope("recoverMissingStock");
+    if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
     if (quantity<=0 || person.trimmed().isEmpty()) return inventoryFailure("تعداد و نام ثبت‌کننده را وارد کنید.");
     if (!m_db.transaction()) return inventoryFailure("امکان شروع ذخیره‌سازی وجود ندارد.");

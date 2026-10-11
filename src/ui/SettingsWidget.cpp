@@ -1,4 +1,6 @@
 #include "SettingsWidget.h"
+#include "SyncWidget.h"
+#include "../sync/SyncStorage.h"
 #include "StockTypesWidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -38,6 +40,8 @@ void SettingsWidget::setupUi() {
     scrollLayout->setContentsMargins(0, 0, 0, 0);
     scrollLayout->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
     scrollLayout->setSpacing(20);
+
+    if (!SyncStorage::setting("endpoint").isEmpty()) scrollLayout->addWidget(new SyncWidget(scrollContent));
 
     // ================= CARD 1: THEME / DARK MODE =================
     QFrame* themeCard = new QFrame(scrollContent);
