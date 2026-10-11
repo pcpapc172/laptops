@@ -17,6 +17,7 @@ public:
     void synchronize();
     void scheduleSync();
     bool authenticated() const { return !m_token.isEmpty(); }
+    bool busy() const { return m_busy; }
     bool unlocked() const { return m_unlocked; }
     QString status() const { return m_status; }
     using Callback = std::function<void(bool,QJsonValue,QString)>;

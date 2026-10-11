@@ -1,6 +1,6 @@
 #pragma once
 #include <QFrame>
-class QLineEdit;
+class QProgressBar;
 class QLabel;
 class QListWidget;
 class SyncWidget:public QFrame {
@@ -11,7 +11,6 @@ private:
     void refresh();
     void users();
     QLabel* m_status;
-    QLineEdit* m_username;
-    QLineEdit* m_password;
+    QProgressBar* m_progress;
     QListWidget* m_conflicts;
 };

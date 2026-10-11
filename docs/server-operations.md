@@ -68,3 +68,7 @@ Password verifier implementation uses [Qt QPasswordDigestor](https://doc.qt.io/q
 ## Deleted identity collision recovery (3.0.2)
 
 Client integer allocation stays above all mapped identities, including remote tombstones. This prevents new records from inheriting deleted global IDs after a snapshot. For a failed new laptop loan with `ALREADY_EXISTS` and a deleted server identity, the existing retry action preserves the rejected payload and creates a fresh local/global identity. The server still checks active laptop uniqueness and permissions; it does not resurrect or overwrite deleted records. New-loan messages distinguish local queuing from server acceptance.
+
+## Login and sync interface (3.1.0)
+
+The startup password dialog shows a loading bar during online authentication. Escape, repeated Enter, and the window close action do not dismiss the gate; the explicit exit button closes the application and is disabled while authentication is in progress. Failed authentication leaves the prompt open. Settings shows sync progress, status and conflict controls without a second login form. Logout reopens the startup password gate.

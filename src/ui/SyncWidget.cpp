@@ -15,17 +15,16 @@
 #include <QPlainTextEdit>
 #include <QJsonDocument>
 #include <QCheckBox>
+#include <QProgressBar>
 
 SyncWidget::SyncWidget(QWidget* p):QFrame(p) {
     setProperty("card",true);setMaximumWidth(820);auto layout=new QVBoxLayout(this);layout->setContentsMargins(28,22,28,22);
     layout->addWidget(new QLabel("سرور مشترک و همگام‌سازی",this));
     auto endpoint=new QLabel(SyncStorage::setting("endpoint"),this);endpoint->setTextInteractionFlags(Qt::TextSelectableByMouse);layout->addWidget(endpoint);
     m_status=new QLabel(this);m_status->setWordWrap(true);layout->addWidget(m_status);
-    auto row=new QHBoxLayout;m_username=new QLineEdit(this);m_username->setPlaceholderText("نام کاربری");m_username->setText(SyncStorage::setting("username"));m_username->setObjectName("syncUsername");
-    m_password=new QLineEdit(this);m_password->setPlaceholderText("رمز ورود");m_password->setEchoMode(QLineEdit::Password);m_password->setObjectName("syncPassword");row->addWidget(m_username);row->addWidget(m_password);layout->addLayout(row);
+    m_progress=new QProgressBar(this);m_progress->setObjectName("syncProgress");m_progress->setRange(0,0);m_progress->setTextVisible(false);m_progress->setFixedHeight(8);layout->addWidget(m_progress);
     auto buttons=new QHBoxLayout;
     auto add=[this,buttons](const QString& text,auto action){auto b=new QPushButton(text,this);b->setCursor(Qt::PointingHandCursor);buttons->addWidget(b);connect(b,&QPushButton::clicked,this,action);return b;};
-    auto login=add("ورود",[this]{QString password=m_password->text();m_password->clear();SyncEngine::instance().login(m_username->text().trimmed(),password);});login->setProperty("primary",true);login->setObjectName("syncLogin");
     add("همگام‌سازی",[]{SyncEngine::instance().synchronize();});add("خروج",[]{SyncEngine::instance().logout();});
     add("کاربران",[this]{users();});layout->addLayout(buttons);
     auto explanation=new QLabel("پس از ورود، ارسال تغییرات و دریافت اطلاعات خودکار است. در حالت آفلاین، صف تغییرات حفظ و پس از اتصال دوباره ارسال می‌شود.",this);explanation->setWordWrap(true);explanation->setProperty("secondary",true);layout->addWidget(explanation);
@@ -39,6 +38,7 @@ SyncWidget::SyncWidget(QWidget* p):QFrame(p) {
     connect(&SyncEngine::instance(),&SyncEngine::stateChanged,this,[this]{refresh();});connect(&SyncEngine::instance(),&SyncEngine::dataChanged,this,[this]{refresh();});refresh();
 }
 void SyncWidget::refresh() {
+    m_progress->setVisible(SyncEngine::instance().busy());
     m_status->setText(SyncEngine::instance().status()+QString("\n%1 — در صف: %2، تعارض: %3").arg(SyncStorage::setting("display_name")).arg(SyncStorage::count("pending")).arg(SyncStorage::count("conflict")));
     m_conflicts->clear();for(const auto& value:SyncStorage::conflicts()){auto c=value.toObject();auto i=new QListWidgetItem(c["created"].toString()+" — "+c["message"].toString(),m_conflicts);i->setData(Qt::UserRole,c);}
     m_conflicts->setVisible(m_conflicts->count()>0);

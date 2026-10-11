@@ -7,6 +7,8 @@
 #include <QThread>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QProgressBar>
+#include <QKeyEvent>
 #include <QDateTime>
 #include <QDebug>
 #include <functional>
@@ -26,7 +28,8 @@ int main(int argc,char** argv){
     auto start=[&]{server.start(QString::fromLocal8Bit(argv[1]),{"-m","server.test_fixture","--db",dir.filePath("server.db"),"--port",QString::number(port)});require(server.waitForStarted(),"fixture process started");QElapsedTimer boot;boot.start();bool ready=false;while(boot.elapsed()<10000){QTcpSocket probe;probe.connectToHost(QHostAddress::LocalHost,port);if(probe.waitForConnected(100)){ready=true;break;}QThread::msleep(50);}require(ready,"fixture listener ready");};start();SyncStorage::setSetting("endpoint","http://127.0.0.1:"+QString::number(port));auto& engine=SyncEngine::instance();
     {
         LoginDialog gate;gate.show();auto password=gate.findChild<QLineEdit*>("loginPassword");require(password->echoMode()==QLineEdit::Password,"password masked");require(!engine.unlocked(),"startup locked");
-        enter(gate,"wrong-password");require(until([&]{return gate.findChild<QPushButton*>("loginSubmit")->isEnabled();}),"failed login returns");require(!engine.unlocked()&&gate.isVisible(),"wrong password cannot open app");require(!gate.findChild<QPushButton*>("loginOffline")->isEnabled(),"online rejection cannot bypass into offline");
+        QKeyEvent escape(QEvent::KeyPress,Qt::Key_Escape,Qt::NoModifier);QApplication::sendEvent(&gate,&escape);require(gate.isVisible(),"Escape keeps password prompt open");gate.close();require(gate.isVisible(),"window close keeps password prompt open");
+        enter(gate,"wrong-password");require(gate.findChild<QProgressBar*>("loginProgress")->isVisible(),"login displays loading bar");require(!gate.findChild<QPushButton*>("loginCancel")->isEnabled(),"cannot accidentally quit during login");QKeyEvent repeatedEnter(QEvent::KeyPress,Qt::Key_Return,Qt::NoModifier);QApplication::sendEvent(&gate,&repeatedEnter);require(gate.isVisible(),"repeated Enter does not dismiss loading prompt");require(until([&]{return gate.findChild<QPushButton*>("loginSubmit")->isEnabled();}),"failed login returns");require(!gate.findChild<QProgressBar*>("loginProgress")->isVisible(),"failed login hides loading bar");require(!engine.unlocked()&&gate.isVisible(),"wrong password cannot open app");require(!gate.findChild<QPushButton*>("loginOffline")->isEnabled(),"online rejection cannot bypass into offline");
         enter(gate,"integration-test-password");require(until([&]{return engine.unlocked()&&!gate.isVisible();}),"verified password opens gate");require(until([&]{return engine.status().startsWith("متصل");}),"automatic first synchronization");
     }
     require(!SyncStorage::setting("offline_verifier").isEmpty(),"offline verifier saved");require(SyncStorage::setting("offline_verifier")!="integration-test-password","plaintext password not stored");engine.logout();require(!engine.unlocked(),"logout locks app");server.kill();server.waitForFinished();
