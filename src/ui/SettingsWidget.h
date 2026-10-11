@@ -2,6 +2,7 @@
 
 #include <QWidget>
 
+class StockTypesWidget;
 class QListWidget;
 class QLineEdit;
 class QPushButton;
@@ -26,6 +27,7 @@ private slots:
     void onThemeToggled();
 
 private:
+    StockTypesWidget* m_stockTypes;
     QListWidget* m_teachersList;
     QLineEdit* m_newTeacherEdit;
     QPushButton* m_addTeacherBtn;

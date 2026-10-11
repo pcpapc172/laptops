@@ -5,6 +5,7 @@
 #include <QList>
 #include <QSqlDatabase>
 #include "../models/LoanRecord.h"
+#include "../models/InventoryRecord.h"
 
 class DatabaseManager {
 public:
@@ -37,6 +38,23 @@ public:
     bool addPresetGrade(const QString& name);
     bool removePresetGrade(const QString& name);
 
+    // Inventory: totals include available, loaned, and missing units.
+    QList<StockType> getStockTypes();
+    bool saveStockType(StockType& type);
+    bool removeStockType(int id);
+    QList<InventoryItem> getInventoryItems(const QString& search = QString(), int typeId = 0);
+    bool saveInventoryItem(InventoryItem& item, const QString& adjustmentReason = QString());
+    QList<InventoryLoan> getInventoryLoans(bool activeOnly = false);
+    bool lendInventory(int itemId, int quantity, const QString& borrower,
+                       const QDateTime& dueTime = QDateTime(), const QString& notes = QString());
+    bool returnInventory(int loanId, int quantity, const QString& returner, const QString& notes = QString());
+    QList<MissingStockReport> getMissingStockReports(bool unresolvedOnly = false);
+    bool reportMissingStock(int itemId, int quantity, const QString& reporter,
+                            const QString& notes, int loanId = 0);
+    bool recoverMissingStock(int reportId, int quantity, const QString& person, const QString& notes = QString());
+    QList<InventoryEvent> getInventoryEvents(int itemId = 0);
+    QString inventoryError() const { return m_inventoryError; }
+
     // Settings
     QString getSetting(const QString& key, const QString& defaultValue = QString());
     void setSetting(const QString& key, const QString& value);
@@ -55,6 +73,12 @@ private:
     DatabaseManager& operator=(const DatabaseManager&) = delete;
 
     QSqlDatabase m_db;
+    QString m_inventoryError;
     bool createTables();
+    bool createInventoryTables();
+    void seedInventoryTypes();
+    bool inventoryFailure(const QString& message);
+    bool appendInventoryEvent(int itemId, const QString& action, int quantity,
+                              const QString& person, const QString& notes);
     void seedDefaults();
 };

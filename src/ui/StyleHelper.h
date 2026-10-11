@@ -44,7 +44,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 border-radius: 14px;
             }
 
-            QFrame[card="true"] QWidget {
+            QFrame[card="true"] .QWidget {
                 background-color: transparent;
             }
 
@@ -396,6 +396,20 @@ inline QString getApplicationStyle(bool darkMode = false) {
                 border-radius: 5px;
             }
 
+            QTabWidget::pane {
+                border: 1px solid #3c4043;
+                border-radius: 10px;
+            }
+            QTabBar::tab {
+                background-color: #1e1f20;
+                color: #9aa0a6;
+                border: 1px solid #3c4043;
+                padding: 8px 14px;
+            }
+            QTabBar::tab:selected {
+                background-color: #004a77;
+                color: #c2e7ff;
+            }
             QDialog {
                 background-color: #1e1f20;
             }
@@ -440,7 +454,7 @@ inline QString getApplicationStyle(bool darkMode = false) {
             border-radius: 14px;
         }
 
-        QFrame[card="true"] QWidget {
+        QFrame[card="true"] .QWidget {
             background-color: transparent;
         }
 
@@ -777,6 +791,20 @@ inline QString getApplicationStyle(bool darkMode = false) {
             border-radius: 5px;
         }
 
+        QTabWidget::pane {
+            border: 1px solid #dadce0;
+            border-radius: 10px;
+        }
+        QTabBar::tab {
+            background-color: #ffffff;
+            color: #5f6368;
+            border: 1px solid #dadce0;
+            padding: 8px 14px;
+        }
+        QTabBar::tab:selected {
+            background-color: #e8f0fe;
+            color: #1967d2;
+        }
         QDialog {
             background-color: #ffffff;
         }

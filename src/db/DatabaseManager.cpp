@@ -59,6 +59,8 @@ bool DatabaseManager::initDatabase() {
         return false;
     }
 
+    QSqlQuery(m_db).exec("PRAGMA foreign_keys = ON");
+
     if (!createTables()) {
         return false;
     }
@@ -136,10 +138,11 @@ bool DatabaseManager::createTables() {
     query.exec("CREATE INDEX IF NOT EXISTS idx_laptop_status ON loans(laptop_number, status);");
     query.exec("CREATE INDEX IF NOT EXISTS idx_status ON loans(status);");
 
-    return true;
+    return createInventoryTables();
 }
 
 void DatabaseManager::seedDefaults() {
+    seedInventoryTypes();
     // Seed initial grades if empty
     QSqlQuery checkGrades("SELECT COUNT(*) FROM preset_grades", m_db);
     if (checkGrades.next() && checkGrades.value(0).toInt() == 0) {

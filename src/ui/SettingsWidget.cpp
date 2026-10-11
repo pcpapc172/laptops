@@ -1,4 +1,5 @@
 #include "SettingsWidget.h"
+#include "StockTypesWidget.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -170,11 +171,25 @@ void SettingsWidget::setupUi() {
     presetsCardLayout->addLayout(gridLayout);
     scrollLayout->addWidget(presetsCard);
 
+    QFrame* stockCard = new QFrame(scrollContent);
+    stockCard->setProperty("card", true);
+    stockCard->setMaximumWidth(820);
+    QVBoxLayout* stockLayout = new QVBoxLayout(stockCard);
+    stockLayout->setContentsMargins(28, 24, 28, 24);
+    QLabel* stockTitle = new QLabel("انواع کالاهای انبار", stockCard);
+    stockTitle->setFont(titleFont);
+    stockLayout->addWidget(stockTitle);
+    m_stockTypes = new StockTypesWidget(stockCard);
+    stockLayout->addWidget(m_stockTypes);
+    connect(m_stockTypes, &StockTypesWidget::typesChanged, this, &SettingsWidget::presetsChanged);
+    scrollLayout->addWidget(stockCard);
+
     scrollArea->setWidget(scrollContent);
     outerLayout->addWidget(scrollArea);
 }
 
 void SettingsWidget::refreshPresets() {
+    m_stockTypes->refreshData();
     // Teachers
     m_teachersList->clear();
     QStringList teachers = DatabaseManager::instance().getPresetTeachers();

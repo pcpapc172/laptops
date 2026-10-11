@@ -10,6 +10,7 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("LaptopManager");
+    app.setApplicationVersion("2.1.0");
     app.setApplicationDisplayName("سامانه مدیریت امانت لپ‌تاپ");
     app.setOrganizationName("LaptopManagementSystem");
 

@@ -81,7 +81,7 @@ jobs:
       - name: Build Executable & Run Tests
         run: |
           cmake --build build --config Release
-          LAPTOPS_DATA_DIR=./test_db ./build/test_manager
+          LAPTOPS_DATA_DIR=./test_db ctest --test-dir build --output-on-failure
 
       - name: Package Linux Binary
         run: |

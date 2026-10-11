@@ -13,6 +13,7 @@ class ActiveLoansWidget;
 class DeliveredLoansWidget;
 class HistoryWidget;
 class SettingsWidget;
+class InventoryWidget;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -40,6 +41,7 @@ private:
     DeliveredLoansWidget* m_deliveredLoansWidget;
     HistoryWidget* m_historyWidget;
     SettingsWidget* m_settingsWidget;
+    InventoryWidget* m_inventoryWidget;
 
     void setupUi();
     void setupConnections();

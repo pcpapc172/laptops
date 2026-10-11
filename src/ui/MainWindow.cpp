@@ -20,6 +20,7 @@
 #include "DeliveredLoansWidget.h"
 #include "HistoryWidget.h"
 #include "SettingsWidget.h"
+#include "InventoryWidget.h"
 #include "StyleHelper.h"
 #include "../db/DatabaseManager.h"
 #include "../utils/DateTimeUtils.h"
@@ -104,6 +105,7 @@ void MainWindow::setupUi() {
         "امانت‌های فعال",
         "تحویل داده شده‌ها",
         "بایگانی",
+        "انبار",
         "تنظیمات"
     };
 
@@ -133,11 +135,13 @@ void MainWindow::setupUi() {
     m_deliveredLoansWidget = new DeliveredLoansWidget(this);
     m_historyWidget = new HistoryWidget(this);
     m_settingsWidget = new SettingsWidget(this);
+    m_inventoryWidget = new InventoryWidget(this);
 
     m_stackedWidget->addWidget(m_newLoanWidget);
     m_stackedWidget->addWidget(m_activeLoansWidget);
     m_stackedWidget->addWidget(m_deliveredLoansWidget);
     m_stackedWidget->addWidget(m_historyWidget);
+    m_stackedWidget->addWidget(m_inventoryWidget);
     m_stackedWidget->addWidget(m_settingsWidget);
 
     rootLayout->addWidget(m_stackedWidget);
@@ -182,6 +186,7 @@ void MainWindow::setupConnections() {
     // When presets change in Settings, refresh NewLoan form presets
     connect(m_settingsWidget, &SettingsWidget::presetsChanged, this, [this]() {
         m_newLoanWidget->refreshPresets();
+        m_inventoryWidget->refreshTypes();
     });
 
     // When theme toggled in Settings
@@ -257,6 +262,8 @@ void MainWindow::switchPage(int index) {
     } else if (index == 0) {
         m_newLoanWidget->refreshPresets();
     } else if (index == 4) {
+        m_inventoryWidget->refreshTypes();
+    } else if (index == 5) {
         m_settingsWidget->refreshPresets();
     }
 
