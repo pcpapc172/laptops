@@ -247,8 +247,9 @@ bool DatabaseManager::deleteLoan(int id) {
 
 bool DatabaseManager::updateLoan(const LoanRecord& record) {
     SyncMutationScope syncScope("updateLoan");
-    if (!syncScope.allowed()) return false;
-    if (!m_db.isOpen()) return false;
+    m_loanError.clear();
+    if (!syncScope.allowed()) {m_loanError=syncScope.denialReason();return false;}
+    if (!m_db.isOpen()) {m_loanError="دیتابیس محلی باز نیست.";return false;}
 
     QSqlQuery query(m_db);
     query.prepare(R"(
@@ -283,7 +284,9 @@ bool DatabaseManager::updateLoan(const LoanRecord& record) {
                     ? record.returnTime.toString(Qt::ISODate) : QVariant());
     query.bindValue(":id", record.id);
 
-    return query.exec();
+    if(!query.exec()) {m_loanError=query.lastError().text();qWarning()<<"Update loan failed:"<<m_loanError;return false;}
+    if(query.numRowsAffected()!=1) {m_loanError="این رکورد دیگر در دیتابیس محلی وجود ندارد؛ فهرست را تازه کنید.";return false;}
+    return true;
 }
 
 bool DatabaseManager::updateLoanNotes(int id, const QString& notes) {

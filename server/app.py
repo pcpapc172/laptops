@@ -79,6 +79,9 @@ class Store:
                 CREATE TABLE IF NOT EXISTS login_failures(peer TEXT NOT NULL,username TEXT NOT NULL,time INTEGER NOT NULL);
                 CREATE INDEX IF NOT EXISTS idx_login_failures ON login_failures(peer,username,time);
             ''')
+            columns={row[1] for row in db.execute('PRAGMA table_info(changes)')}
+            for column in ['batch_id','user_id','device_id']:
+                if column not in columns:db.execute('ALTER TABLE changes ADD COLUMN '+column+' TEXT')
             db.execute("INSERT OR IGNORE INTO meta VALUES('instance_id',?)", (uuid.uuid4().hex,))
             db.execute("INSERT OR IGNORE INTO meta VALUES('cursor','0')")
             db.commit()
@@ -131,7 +134,7 @@ class Store:
         versions = {(r['table_name'], r['id']): r['revision'] for r in rows}
         return state, versions
 
-    def commit_state(self, db, state, versions, touched):
+    def commit_state(self, db, state, versions, touched, origin=None):
         updates = []
         for table, entity_id in sorted(touched):
             body = state.get((table, entity_id))
@@ -142,7 +145,9 @@ class Store:
             updates.append({'table': table, 'entity_id': entity_id, 'revision': revision, 'deleted': deleted, 'data': body})
         cursor = int(db.execute("SELECT value FROM meta WHERE key='cursor'").fetchone()[0]) + 1
         db.execute("UPDATE meta SET value=? WHERE key='cursor'", (str(cursor),))
-        db.execute('INSERT INTO changes VALUES(?,?)', (cursor, json_text(updates)))
+        origin=origin or {}
+        db.execute('INSERT INTO changes(seq,updates,batch_id,user_id,device_id) VALUES(?,?,?,?,?)',
+                   (cursor,json_text(updates),origin.get('batch_id'),origin.get('user_id'),origin.get('device_id')))
         return cursor, updates
 
     def apply(self, batch, token):
@@ -184,7 +189,7 @@ class Store:
                     if entry.get('after_batch'):
                         expected(entry, (entry.get('table'), entry.get('entity_id')))
                 candidate, touched = apply_entries(state, versions, batch.entries, user['role'], expected)
-                cursor, updates = self.commit_state(db, candidate, versions, touched)
+                cursor, updates = self.commit_state(db, candidate, versions, touched, {'batch_id':batch.id,'user_id':user['id'],'device_id':batch.device_id})
                 result = {'status': 'accepted', 'id': batch.id, 'cursor': cursor, 'updates': updates}
             except Conflict as exc:
                 current = []
@@ -203,7 +208,7 @@ class Store:
 
 def create_app(path=None):
     store = Store(path or os.environ.get('LAPTOPS_SERVER_DB', '/var/lib/laptop-manager/server.db'))
-    app = FastAPI(title='Laptop Manager Server', version='3.0.0', docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title='Laptop Manager Server', version='3.0.1', docs_url=None, redoc_url=None, openapi_url=None)
     app.state.store = store
 
     @app.middleware('http')
@@ -226,7 +231,7 @@ def create_app(path=None):
     def health():
         with store.connection() as db:
             db.execute('SELECT 1')
-        return {'status': 'ok', 'version': '3.0.0', 'protocol': PROTOCOL}
+        return {'status': 'ok', 'version': '3.0.1', 'protocol': PROTOCOL}
 
     @app.post('/v1/login')
     def login(body: Login, request: Request):
@@ -296,7 +301,7 @@ def create_app(path=None):
                 raise HTTPException(409, 'نسخه سرور تغییر کرده است؛ دریافت کامل اطلاعات لازم است.')
             rows = db.execute('SELECT * FROM changes WHERE seq>? ORDER BY seq LIMIT 200', (after,)).fetchall()
             return {'instance_id': instance_id, 'cursor': rows[-1]['seq'] if rows else after, 'has_more': bool(rows and rows[-1]['seq'] < latest),
-                    'role': user['role'], 'transactions': [{'cursor': r['seq'], 'updates': json.loads(r['updates'])} for r in rows]}
+                    'role': user['role'], 'transactions': [{'cursor':r['seq'],'updates':json.loads(r['updates']),'batch_id':r['batch_id'],'user_id':r['user_id'],'device_id':r['device_id']} for r in rows]}
 
     @app.get('/v1/users')
     def users(authorization: str | None = Header(default=None)):

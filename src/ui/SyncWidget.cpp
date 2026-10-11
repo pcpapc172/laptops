@@ -28,7 +28,7 @@ SyncWidget::SyncWidget(QWidget* p):QFrame(p) {
     auto login=add("ورود",[this]{QString password=m_password->text();m_password->clear();SyncEngine::instance().login(m_username->text().trimmed(),password);});login->setProperty("primary",true);login->setObjectName("syncLogin");
     add("همگام‌سازی",[]{SyncEngine::instance().synchronize();});add("خروج",[]{SyncEngine::instance().logout();});
     add("کاربران",[this]{users();});layout->addLayout(buttons);
-    auto explanation=new QLabel("ثبت آفلاین موقت است؛ پس از اتصال، موجودی و تغییرات سایر کاربران بررسی می‌شود. تغییرات ردشده برای بررسی حفظ می‌شوند.",this);explanation->setWordWrap(true);explanation->setProperty("secondary",true);layout->addWidget(explanation);
+    auto explanation=new QLabel("پس از ورود، ارسال تغییرات و دریافت اطلاعات خودکار است. در حالت آفلاین، صف تغییرات حفظ و پس از اتصال دوباره ارسال می‌شود.",this);explanation->setWordWrap(true);explanation->setProperty("secondary",true);layout->addWidget(explanation);
     m_conflicts=new QListWidget(this);m_conflicts->setMaximumHeight(150);layout->addWidget(m_conflicts);
     auto conflictButtons=new QHBoxLayout;
     auto details=new QPushButton("مشاهده تغییرات",this);auto retry=new QPushButton("ارسال دوباره با نسخه فعلی",this);auto discard=new QPushButton("کنار گذاشتن تغییر محلی",this);

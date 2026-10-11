@@ -32,6 +32,21 @@ def legacy_records(path):
         return state
 
 
+def review_records(path, review_id):
+    with sqlite3.connect(f'file:{Path(path).resolve()}?mode=ro',uri=True) as db:
+        row=db.execute("SELECT payload FROM sync_batches WHERE id=? AND operation='legacy_review'",(review_id,)).fetchone()
+        if not row:raise ValueError('Preserved legacy review was not found')
+        records=json.loads(row[0]).get('entities',[])
+        state={}
+        for record in records:
+            key=(record['table'],record['entity_id'])
+            if key in state:raise ValueError('Duplicate record in preserved proposal')
+            state[key]=record['data']
+        if not state:raise ValueError('Preserved proposal is empty')
+        validate(state)
+        return state
+
+
 def legacy_id(table,ident):
     return hashlib.sha256(f'laptops-legacy:{table}:{ident}'.encode()).hexdigest()[:32]
 
@@ -48,7 +63,7 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--db',required=True)
     sub=parser.add_subparsers(dest='command',required=True)
     bootstrap=sub.add_parser('bootstrap');bootstrap.add_argument('--credentials-file',required=True)
-    imp=sub.add_parser('import');imp.add_argument('--legacy-db',required=True)
+    imp=sub.add_parser('import');imp.add_argument('--legacy-db',required=True);imp.add_argument('--review-id')
     b=sub.add_parser('backup');b.add_argument('--output',required=True)
     r=sub.add_parser('restore');r.add_argument('--input',required=True)
     args=parser.parse_args()
@@ -76,7 +91,7 @@ def main():
         store.create_user('admin','مدیر',password)
         print('Administrator created; credentials written to private file')
     elif args.command=='import':
-        state=legacy_records(args.legacy_db)
+        state=review_records(args.legacy_db,args.review_id) if args.review_id else legacy_records(args.legacy_db)
         with store.transaction() as db:
             if db.execute('SELECT COUNT(*) FROM entities').fetchone()[0]:raise ValueError('Server is not empty')
             cursor,_=store.commit_state(db,state,{},set(state))

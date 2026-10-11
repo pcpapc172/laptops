@@ -22,7 +22,7 @@ The UI distinguishes connected, offline, pending, authentication required, and c
 
 Admin manages users, presets, stock metadata/adjustments, and deletions. Staff handles lending, returns, notes, and missing/recovery reports. Viewer reads only. The server authorizes every command using the current account role, including changes created offline. Revoked sessions and permissions stop resync rather than being treated as a network outage.
 
-Online session tokens are not written into the loan database. Offline work uses the last authenticated local profile and is provisional; reconnect requires that profile's authenticated account. Shared operating-system accounts must not be treated as a security boundary between people: use separate OS accounts for private caches. User/device identity is recorded independently from recipient/returner names.
+A password gate now hides the main window at startup and after logout/revocation. Online session tokens and reconnect passwords live only in memory. A salted PBKDF2 verifier permits password-checked offline unlock for seven days after an online login; it is invalidated after confirmed revocation. The local SQLite file remains unencrypted. Offline work is provisional. Reconnect uses the same account and retries automatically; mutations trigger uploads, and periodic polling receives other users’ updates. Shared operating-system accounts must not be treated as a security boundary between people: use separate OS accounts for private caches. User/device identity is recorded independently from recipient/returner names.
 
 ## Rollout and recovery
 
@@ -41,4 +41,4 @@ Concurrent lending of the last unit; simultaneous metadata edits; duplicate uplo
 
 ## Current deployment
 
-The supplied laptop database was identified by its owner as dummy data. The temporary import and its server backups were cleared; the server starts empty and retains its administrator account. The original laptop database has a private local backup. No automatic legacy upload runs on launch.
+The supplied laptop database was identified by its owner as dummy data. The temporary import and its server backups were cleared; the administrator account was retained. Subsequently, an explicitly supplied second database containing important preserved records was backed up, validated, and imported: eight laptop loans and 33 presets/types. The original file was unchanged. The original laptop database has a private local backup. No automatic legacy upload runs on launch.

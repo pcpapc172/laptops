@@ -142,3 +142,36 @@ def test_two_users_laptop_lending_edits_and_returns(tmp_path):
     assert submit(c,a,d,h,[entry('loans',uid(),None,second)])[0].json()['status']=='accepted'
     assert submit(c,other,device,oh,[entry('loans',ident,returned,None,3)])[0].json()['code']=='FORBIDDEN'
     assert submit(c,a,d,h,[entry('loans',ident,returned,None,3)])[0].json()['status']=='accepted'
+
+
+def test_recover_and_import_preserved_archive(tmp_path):
+    import sqlite3,json,hashlib
+    from server.manage import review_records
+    app,c,a,d,h=setup(tmp_path)
+    archived=dict(bell_period=1,grade_level='Grade',teacher_name='Teacher',recipient_name='Recipient',laptop_number='ARCHIVE-1',initial_condition='Healthy',return_condition='Healthy',returner_name='Returner',lend_time='2026-10-01T10:00:00',return_time='2026-10-02T10:00:00',status='RETURNED',notes='Important historical note')
+    source=tmp_path/'source.db';ident=uid();proposal=[{'table':'loans','entity_id':ident,'data':archived}]
+    with sqlite3.connect(source) as db:
+        db.execute('CREATE TABLE sync_batches(id TEXT,operation TEXT,payload TEXT)')
+        db.execute('INSERT INTO sync_batches VALUES(?,?,?)',('review','legacy_review',json.dumps({'entities':proposal})))
+    before=hashlib.sha256(source.read_bytes()).digest()
+    state=review_records(source,'review')
+    assert state=={('loans',ident):archived}
+    assert hashlib.sha256(source.read_bytes()).digest()==before
+    assert c.post('/v1/import',json={'entities':proposal},headers=h).json()['imported']==1
+    snapshot=c.get('/v1/snapshot',headers=h).json()
+    assert snapshot['entities'][0]['data']==archived
+    # Re-import cannot overwrite a populated shared database.
+    assert c.post('/v1/import',json={'entities':proposal},headers=h).status_code==409
+
+
+def test_change_feed_identifies_lost_acknowledgements(tmp_path):
+    app,c,a,d,h=setup(tmp_path)
+    response,wire=submit(c,a,d,h,[entry('preset_teachers',uid(),None,{'name':'Peer'})])
+    assert response.json()['status']=='accepted'
+    # The client can identify its own committed transaction even when it missed the upload reply.
+    feed=c.get('/v1/changes',params={'instance_id':a['instance_id'],'after':0},headers=h).json()
+    transaction=feed['transactions'][0]
+    assert transaction['batch_id']==wire['id']
+    assert transaction['user_id']==a['user']['id']
+    assert transaction['device_id']==d
+    assert transaction['updates']==response.json()['updates']

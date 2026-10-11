@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(LaptopManager VERSION 3.0.0 LANGUAGES CXX)
+project(LaptopManager VERSION 3.0.1 LANGUAGES CXX)
 
 if(MSVC)
     add_compile_options(/utf-8)
@@ -21,6 +21,9 @@ set(SOURCES
     src/main.cpp
     src/sync/SyncEngine.h
     src/sync/SyncEngine.cpp
+    src/sync/OfflineCredentials.cpp
+    src/ui/LoginDialog.h
+    src/ui/LoginDialog.cpp
     src/ui/SyncWidget.h
     src/ui/SyncWidget.cpp
     src/models/LoanRecord.h
@@ -93,6 +96,9 @@ add_executable(snapshot
     tests/snapshot.cpp
     src/sync/SyncEngine.h
     src/sync/SyncEngine.cpp
+    src/sync/OfflineCredentials.cpp
+    src/ui/LoginDialog.h
+    src/ui/LoginDialog.cpp
     src/ui/SyncWidget.h
     src/ui/SyncWidget.cpp
     src/models/LoanRecord.h
@@ -158,9 +164,16 @@ add_executable(test_sync tests/test_sync.cpp src/db/DatabaseManager.cpp src/db/D
 target_link_libraries(test_sync PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql)
 add_test(NAME SyncStorageTest COMMAND test_sync)
 
-add_executable(test_sync_network tests/test_sync_network.cpp src/db/DatabaseManager.cpp src/db/DatabaseManagerInventory.cpp src/sync/SyncStorage.cpp src/sync/SyncEngine.cpp)
+add_executable(test_sync_network tests/test_sync_network.cpp src/db/DatabaseManager.cpp src/db/DatabaseManagerInventory.cpp src/sync/SyncStorage.cpp src/sync/SyncEngine.cpp src/sync/OfflineCredentials.cpp)
 target_link_libraries(test_sync_network PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Network)
 if(EXISTS "${CMAKE_SOURCE_DIR}/.server-venv/bin/python")
     add_test(NAME SyncNetworkTest COMMAND test_sync_network "${CMAKE_SOURCE_DIR}/.server-venv/bin/python" "${CMAKE_SOURCE_DIR}")
     set_tests_properties(SyncNetworkTest PROPERTIES TIMEOUT 60)
+endif()
+
+add_executable(test_login_ui tests/test_login_ui.cpp src/db/DatabaseManager.cpp src/db/DatabaseManagerInventory.cpp src/sync/SyncStorage.cpp src/sync/SyncEngine.cpp src/sync/OfflineCredentials.cpp src/ui/LoginDialog.cpp)
+target_link_libraries(test_login_ui PRIVATE Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::Gui Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Sql Qt${QT_VERSION_MAJOR}::Network)
+if(EXISTS "${CMAKE_SOURCE_DIR}/.server-venv/bin/python")
+    add_test(NAME LoginUiTest COMMAND test_login_ui "${CMAKE_SOURCE_DIR}/.server-venv/bin/python" "${CMAKE_SOURCE_DIR}")
+    set_tests_properties(LoginUiTest PROPERTIES TIMEOUT 90)
 endif()

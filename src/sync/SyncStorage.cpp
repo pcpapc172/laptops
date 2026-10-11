@@ -12,6 +12,7 @@
 
 namespace {
 QString error;
+std::function<void()> mutationCallback;
 const QStringList tables = {"loans", "preset_teachers", "preset_grades", "stock_types", "inventory_items", "inventory_loans", "inventory_missing", "inventory_events"};
 QMap<QString, QMap<QString,QString>> refs = {{"inventory_items",{{"type_id","stock_types"}}}, {"inventory_loans",{{"item_id","inventory_items"}}}, {"inventory_missing",{{"item_id","inventory_items"},{"loan_id","inventory_loans"}}}, {"inventory_events",{{"item_id","inventory_items"}}}};
 QMap<QString,QStringList> counters = {{"inventory_loans",{"returned","missing"}}, {"inventory_missing",{"recovered"}}};
@@ -46,6 +47,7 @@ bool updateShadow(QSqlDatabase db,const QJsonArray& updates) {
 }
 QSqlDatabase SyncStorage::database() { return QSqlDatabase::database(); }
 QString SyncStorage::lastError() { return error; }
+void SyncStorage::setMutationCallback(std::function<void()> callback) { mutationCallback=std::move(callback); }
 QString SyncStorage::setting(const QString& k) { return scalar(database(),"SELECT value FROM sync_settings WHERE key=?",{k}).toString(); }
 bool SyncStorage::setSetting(const QString& k,const QString& v) { return run(database(),"INSERT OR REPLACE INTO sync_settings VALUES(?,?)",{k,v.isNull()?QStringLiteral(""):v}); }
 QString SyncStorage::deviceId() { return setting("device_id"); }
@@ -96,10 +98,18 @@ SyncMutationScope::SyncMutationScope(const QString& op) {
     QString role=SyncStorage::setting("role"),user=SyncStorage::setting("user_id");
     qint64 last=SyncStorage::setting("authenticated_at").toLongLong();
     QSet<QString> staff={"addLoan","returnLoan","updateLoan","updateLoanNotes","lendInventory","returnInventory","reportMissingStock","recoverMissingStock"};
-    if(user.isEmpty()||role=="viewer"||(role!="admin"&&!staff.contains(op))||QDateTime::currentSecsSinceEpoch()-last>7*86400) return;
+    if(user.isEmpty()||last<=0) {m_denialReason="برای ذخیره تغییرات، ابتدا وارد حساب شوید.";return;}
+    if(role=="viewer"||(role!="admin"&&!staff.contains(op))) {m_denialReason="حساب شما اجازه این تغییر را ندارد.";return;}
+    if(QDateTime::currentSecsSinceEpoch()-last>7*86400) {m_denialReason="اعتبار ورود آفلاین پایان یافته است؛ با اینترنت دوباره وارد شوید.";return;}
     m_allowed=run(db,"UPDATE sync_context SET enabled=1,batch_id=?,user_id=?,device_id=?,operation=? WHERE singleton=1",{uuid(),user,SyncStorage::deviceId(),op}); m_active=m_allowed;
+    if(!m_allowed)m_denialReason=error;
 }
-SyncMutationScope::~SyncMutationScope() { if(m_active)run(SyncStorage::database(),"UPDATE sync_context SET enabled=0,batch_id='' WHERE singleton=1"); }
+SyncMutationScope::~SyncMutationScope() {
+    if(m_active) {
+        run(SyncStorage::database(),"UPDATE sync_context SET enabled=0,batch_id='' WHERE singleton=1");
+        if(mutationCallback&&SyncStorage::count("pending")>0)mutationCallback();
+    }
+}
 
 bool SyncStorage::configureUser(const QJsonObject& u,QString* why) {
     auto db=database();
@@ -141,6 +151,20 @@ QJsonObject SyncStorage::nextBatch() {
 
 bool SyncStorage::project(QSqlDatabase db) {
     if(!run(db,"UPDATE sync_context SET enabled=0,batch_id='' WHERE singleton=1"))return false;
+    // An explicitly imported legacy proposal no longer needs manual review once all of its
+    // original identities are present on the server. Keep the proposal payload for recovery.
+    QSqlQuery reviews(db);reviews.exec("SELECT id,payload FROM sync_batches WHERE operation='legacy_review' AND status='conflict'");
+    QStringList imported;
+    while(reviews.next()) {
+        auto records=object(reviews.value(1))["entities"].toArray();bool complete=!records.isEmpty();
+        for(auto value:records) {
+            auto r=value.toObject();QSqlQuery shadow(db);shadow.prepare("SELECT revision,body FROM sync_shadow WHERE table_name=? AND global_id=?");
+            shadow.addBindValue(r["table"].toString());shadow.addBindValue(r["entity_id"].toString());shadow.exec();
+            if(!shadow.next()||(shadow.value(0).toInt()==1&&object(shadow.value(1))!=r["data"].toObject())){complete=false;break;}
+        }
+        if(complete)imported<<reviews.value(0).toString();
+    }reviews.finish();
+    for(const auto& id:imported)if(!run(db,"UPDATE sync_batches SET status='accepted',message=? WHERE id=?",{QString("نسخه محلی با موفقیت به سرور وارد شده است."),id}))return false;
     QMap<QString,QJsonObject> state; QSqlQuery q(db);q.exec("SELECT table_name,global_id,body FROM sync_shadow WHERE deleted=0");
     while(q.next())state[q.value(0).toString()+":"+q.value(1).toString()]=object(q.value(2));q.finish();
     struct Entry { QString table,global;QVariant before,after; };
@@ -217,7 +241,17 @@ bool SyncStorage::applySnapshot(const QJsonObject& snap) {
 bool SyncStorage::applyChanges(const QJsonObject& feed) {
     if(feed["instance_id"].toString()!=setting("instance_id")||feed["cursor"].toInt()<setting("cursor").toInt())return false;
     auto db=database();if(!db.transaction())return false;
-    for(const auto& t:feed["transactions"].toArray())if(!updateShadow(db,t.toObject()["updates"].toArray())){db.rollback();return false;}
+    for(const auto& value:feed["transactions"].toArray()) {
+        auto transaction=value.toObject();
+        if(!updateShadow(db,transaction["updates"].toArray())){db.rollback();return false;}
+        // A committed feed transaction proves a previously lost acknowledgement. Resolve
+        // our matching outbox entry before replaying overlays, particularly counter deltas.
+        QString id=transaction["batch_id"].toString();
+        if(!id.isEmpty()&&transaction["user_id"].toString()==setting("user_id")&&transaction["device_id"].toString()==deviceId()) {
+            QJsonObject receipt{{"status","accepted"},{"id",id},{"cursor",transaction["cursor"]},{"updates",transaction["updates"]}};
+            if(!run(db,"UPDATE sync_batches SET status='accepted',message='',result=? WHERE id=? AND user_id=? AND device_id=? AND status='pending'",{json(receipt),id,setting("user_id"),deviceId()})){db.rollback();return false;}
+        }
+    }
     bool ok=setSetting("cursor",QString::number(feed["cursor"].toInt()))&&setSetting("role",feed["role"].toString())&&project(db);
     if(!ok){db.rollback();return false;}return db.commit();
 }

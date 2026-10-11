@@ -20,6 +20,7 @@ public:
     bool returnLoan(int id, const QString& returnerName, const QString& returnCondition, const QString& notes = QString());
     bool deleteLoan(int id);
     bool updateLoan(const LoanRecord& record);
+    QString loanError() const { return m_loanError; }
     bool updateLoanNotes(int id, const QString& notes);
 
     QList<LoanRecord> getActiveLoans(const QString& searchTerm = QString());
@@ -74,6 +75,7 @@ private:
 
     QSqlDatabase m_db;
     QString m_inventoryError;
+    QString m_loanError;
     bool createTables();
     bool createInventoryTables();
     void seedInventoryTypes();

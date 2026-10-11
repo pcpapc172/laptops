@@ -3,11 +3,9 @@
 #include <QFont>
 #include <QFontDatabase>
 #include <QStringList>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QTimer>
 #include "sync/SyncEngine.h"
+#include "ui/LoginDialog.h"
 #include "ui/MainWindow.h"
 #include "ui/StyleHelper.h"
 #include "db/DatabaseManager.h"
@@ -16,7 +14,7 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("LaptopManager");
-    app.setApplicationVersion("3.0.0");
+    app.setApplicationVersion("3.0.1");
     app.setApplicationDisplayName("سامانه مدیریت امانت لپ‌تاپ");
     app.setOrganizationName("LaptopManagementSystem");
 
@@ -46,17 +44,29 @@ int main(int argc, char *argv[]) {
     if (!qEnvironmentVariableIsSet("LAPTOPS_DATA_DIR") && SyncStorage::setting("endpoint").isEmpty())
         SyncStorage::setSetting("endpoint", "https://13.42.221.242");
 
+    // Keep records hidden until a password has been checked online or against an
+    // unexpired offline verifier. Credential files cannot bypass this gate.
+    app.setQuitOnLastWindowClosed(false);
+    {
+        LoginDialog login;
+        if (login.exec() != QDialog::Accepted) return 0;
+    }
+
     MainWindow window;
     window.show();
-    // Optional private bootstrap file. Never put a password or token on the command line.
-    int loginFileOption=app.arguments().indexOf("--login-file");
-    if(loginFileOption>=0 && loginFileOption+1<app.arguments().size()) {
-        QFile file(app.arguments()[loginFileOption+1]);
-        if(file.open(QIODevice::ReadOnly)) {
-            auto credentials=QJsonDocument::fromJson(file.readAll()).object();
-            QTimer::singleShot(0,&window,[credentials]{SyncEngine::instance().login(credentials["username"].toString(),credentials["password"].toString());});
+    app.setQuitOnLastWindowClosed(true);
+    QObject::connect(&SyncEngine::instance(), &SyncEngine::accessLocked, &window, [&] {
+        app.setQuitOnLastWindowClosed(false);
+        window.hide();
+        for (QWidget* widget : app.topLevelWidgets()) {
+            if (auto* dialog = qobject_cast<QDialog*>(widget)) dialog->reject();
+            else if (widget != &window) widget->hide();
         }
-    }
+        LoginDialog gate;
+        if (gate.exec() != QDialog::Accepted) { app.quit(); return; }
+        window.show();
+        app.setQuitOnLastWindowClosed(true);
+    });
 
     return app.exec();
 }
