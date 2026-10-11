@@ -26,6 +26,16 @@ bool run(QSqlDatabase db,const QString& sql,const QVariantList& args={}) {
 QVariant scalar(QSqlDatabase db,const QString& sql,const QVariantList& args={}) {
     QSqlQuery q(db);q.prepare(sql);for(const auto& a:args) q.addBindValue(a);if(!q.exec()||!q.next()) return {};return q.value(0);
 }
+// Remote tombstones reserve local identities even when no domain row is projected.
+// Keep SQLite allocation above every mapping, not just the currently visible rows.
+bool reserveMappedIds(QSqlDatabase db) {
+    for(const auto& table:tables) {
+        auto maximum=scalar(db,"SELECT COALESCE(MAX(local_id),0) FROM sync_ids WHERE table_name=?",{table});
+        if(!run(db,"UPDATE sqlite_sequence SET seq=MAX(seq,?) WHERE name=?",{maximum,table})
+            ||!run(db,"INSERT INTO sqlite_sequence(name,seq) SELECT ?,? WHERE NOT EXISTS(SELECT 1 FROM sqlite_sequence WHERE name=?)",{table,maximum,table}))return false;
+    }
+    return true;
+}
 QStringList fields(QSqlDatabase db,const QString& table) {
     QStringList result;QSqlQuery q(db);q.exec("PRAGMA table_info("+table+")");while(q.next()) if(q.value(1)!="id") result<<q.value(1).toString(); return result;
 }
@@ -88,6 +98,7 @@ bool SyncStorage::initialize(QSqlDatabase db) {
             if(!run(db,sql)){db.rollback();return false;}
         }
     }
+    if(!reserveMappedIds(db)){db.rollback();return false;}
     return db.commit();
 }
 
@@ -213,7 +224,7 @@ bool SyncStorage::project(QSqlDatabase db) {
             values<<value;
         }
         if(!run(db,"INSERT INTO "+table+" ("+columns.join(',')+") VALUES("+marks.join(',')+")",values))return false;
-    }return true;
+    }return reserveMappedIds(db);
 }
 
 bool SyncStorage::applySnapshot(const QJsonObject& snap) {
@@ -272,14 +283,24 @@ bool SyncStorage::retry(const QString& id) {
     QString actor=scalar(db,"SELECT user_id FROM sync_batches WHERE id=? AND status='conflict'",{id}).toString();
     if(actor.isEmpty()||actor!=setting("user_id")){db.rollback();return false;}
     if(scalar(db,"SELECT operation FROM sync_batches WHERE id=?",{id}).toString()=="legacy_review"){db.rollback();return false;}
+    auto previousResult=object(scalar(db,"SELECT result FROM sync_batches WHERE id=?",{id}));
+    QString operation=scalar(db,"SELECT operation FROM sync_batches WHERE id=?",{id}).toString();
     QString replacement=uuid();
     bool ok=run(db,"INSERT INTO sync_batches(id,user_id,device_id,operation,created) SELECT ?,user_id,device_id,operation,created FROM sync_batches WHERE id=?",{replacement,id});
     QSqlQuery q(db);q.prepare("SELECT table_name,global_id,before_body,after_body FROM sync_entries WHERE batch_id=?");q.addBindValue(id);q.exec();
     while(ok&&q.next()) {
         QString table=q.value(0).toString(),global=q.value(1).toString();auto before=object(q.value(2)),after=object(q.value(3));
-        QSqlQuery shadow(db);shadow.prepare("SELECT revision,deleted,body FROM sync_shadow WHERE table_name=? AND global_id=?");shadow.addBindValue(table);shadow.addBindValue(global);shadow.exec();bool exists=shadow.next()&&!shadow.value(1).toBool();auto current=exists?object(shadow.value(2)):QJsonObject();
+        QSqlQuery shadow(db);shadow.prepare("SELECT revision,deleted,body FROM sync_shadow WHERE table_name=? AND global_id=?");shadow.addBindValue(table);shadow.addBindValue(global);shadow.exec();bool hasShadow=shadow.next();bool exists=hasShadow&&!shadow.value(1).toBool();auto current=exists?object(shadow.value(2)):QJsonObject();
         if(q.value(2).isNull()&&exists){ok=false;break;} // Never silently turn a failed create into an overwrite.
         if(!q.value(2).isNull()&&!exists){ok=false;break;}
+        // Recover a failed new loan that collided with a tombstone. Preserve the
+        // old identity and receipt, and give the replacement a new global/local ID.
+        if(q.value(2).isNull()&&hasShadow&&shadow.value(1).toBool()) {
+            if(operation!="addLoan"||table!="loans"||previousResult["code"].toString()!="ALREADY_EXISTS") {ok=false;break;}
+            global=uuid();
+            ok=run(db,"INSERT INTO sync_ids(table_name,local_id,global_id) VALUES(?,(SELECT COALESCE(MAX(local_id),0)+1 FROM sync_ids WHERE table_name=?),?)",{table,table,global});
+            if(!ok)break;
+        }
         QJsonObject desired=current;
         if(q.value(2).isNull())desired=after;
         else for(auto i=after.begin();i!=after.end();++i)if(i.value()!=before[i.key()])desired[i.key()]=counters.value(table).contains(i.key())?QJsonValue(current[i.key()].toInt()+i.value().toInt()-before[i.key()].toInt()):i.value();

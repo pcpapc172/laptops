@@ -12,6 +12,7 @@
 #include <QFrame>
 #include <QScrollArea>
 #include "../db/DatabaseManager.h"
+#include "../sync/SyncStorage.h"
 #include "../utils/DateTimeUtils.h"
 
 NewLoanWidget::NewLoanWidget(QWidget* parent)
@@ -331,8 +332,9 @@ void NewLoanWidget::onSubmit() {
     rec.status = "ACTIVE";
 
     if (DatabaseManager::instance().addLoan(rec)) {
-        QMessageBox::information(this, "موفقیت",
-            QString("امانت لپ‌تاپ شماره «%1» برای زنگ %2 (پایه %3) با موفقیت ثبت شد.")
+        const bool shared=!SyncStorage::setting("endpoint").isEmpty();
+        QMessageBox::information(this, shared ? "ثبت محلی" : "موفقیت",
+            (shared ? "اطلاعات روی این دستگاه ذخیره شد و برای ارسال خودکار به سرور در صف قرار گرفت. تأیید نهایی یا تعارض در تنظیمات همگام‌سازی نمایش داده می‌شود.\n\n" : QString()) + QString("امانت لپ‌تاپ شماره «%1» برای زنگ %2 (پایه %3) با موفقیت ثبت شد.")
             .arg(laptopNum).arg(period).arg(grade));
 
         resetForm();

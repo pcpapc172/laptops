@@ -64,3 +64,7 @@ Python tests cover duplicate/lost acknowledgements across restart, concurrent st
 Native Qt tests cover durable SQL-trigger queues, restart, dependency chains, rejected-parent recovery, explicit retry, role restrictions, and the real HTTP login/upload/offline/reconnect flow for both laptop and inventory operations. CI runs these with a loopback fixture and isolated databases, never the deployed school data.
 
 Password verifier implementation uses [Qt QPasswordDigestor](https://doc.qt.io/qt-6/qpassworddigestor.html) and the PBKDF2 work factor documented by [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+## Deleted identity collision recovery (3.0.2)
+
+Client integer allocation stays above all mapped identities, including remote tombstones. This prevents new records from inheriting deleted global IDs after a snapshot. For a failed new laptop loan with `ALREADY_EXISTS` and a deleted server identity, the existing retry action preserves the rejected payload and creates a fresh local/global identity. The server still checks active laptop uniqueness and permissions; it does not resurrect or overwrite deleted records. New-loan messages distinguish local queuing from server acceptance.
