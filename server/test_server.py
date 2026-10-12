@@ -51,7 +51,8 @@ def test_idempotency_conflict_and_restart(tmp_path):
     body['entries'][0]['after']['name']='Other'
     assert c2.post('/v1/batches',json=body,headers=h).status_code==409
     r,_=submit(c,a,d,h,[entry('inventory_items',iid,item,{**item,'name':'Stale'},1)])
-    assert r.json()['code']=='STALE_REVISION'
+    assert r.json()['status']=='accepted'
+    assert r.json()['updates'][0]['data']['name']=='Stale'
 
 
 def test_concurrent_last_unit(tmp_path):
@@ -83,7 +84,7 @@ def test_roles_revocation_and_dependencies(tmp_path):
     vd=uid();va=c.post('/v1/login',json=dict(username='viewer',password='correct horse battery staple',device_id=vd)).json()
     vh={'Authorization':'Bearer '+va['token']}
     assert submit(c,va,vd,vh,[entry('inventory_loans',uid(),None,lending(iid))])[0].json()['code']=='FORBIDDEN'
-    parent,_=submit(c,a,d,h,[entry('inventory_items',iid,item,{**item,'name':'Stale'},99)])
+    parent,_=submit(c,a,d,h,[entry('inventory_items',iid,item,{**item,'total':-1},99)])
     child=entry('inventory_items',iid,item,{**item,'name':'Child'},1);child['after_batch']=parent.json()['id']
     assert submit(c,a,d,h,[child])[0].json()['code']=='DEPENDENCY'
     # Unrelated work continues after a conflict.
@@ -136,12 +137,12 @@ def test_two_users_laptop_lending_edits_and_returns(tmp_path):
     assert submit(c,other,device,oh,[entry('loans',uid(),None,second)])[0].json()['code']=='LAPTOP_BUSY'
     edited={**laptop,'notes':'Staff note'}
     assert submit(c,other,device,oh,[entry('loans',ident,laptop,edited,1)])[0].json()['status']=='accepted'
-    assert submit(c,a,d,h,[entry('loans',ident,laptop,{**laptop,'notes':'Stale admin note'},1)])[0].json()['code']=='STALE_REVISION'
+    assert submit(c,a,d,h,[entry('loans',ident,laptop,{**laptop,'notes':'Stale admin note'},1)])[0].json()['status']=='accepted'
     returned={**edited,'status':'RETURNED','returner_name':'Returner','return_condition':'Healthy','return_time':'2026-10-11T13:00:00'}
     assert submit(c,other,device,oh,[entry('loans',ident,edited,returned,2)])[0].json()['status']=='accepted'
     assert submit(c,a,d,h,[entry('loans',uid(),None,second)])[0].json()['status']=='accepted'
     assert submit(c,other,device,oh,[entry('loans',ident,returned,None,3)])[0].json()['code']=='FORBIDDEN'
-    assert submit(c,a,d,h,[entry('loans',ident,returned,None,3)])[0].json()['status']=='accepted'
+    assert submit(c,a,d,h,[entry('loans',ident,returned,None,4)])[0].json()['status']=='accepted'
 
 
 def test_recover_and_import_preserved_archive(tmp_path):
@@ -175,3 +176,28 @@ def test_change_feed_identifies_lost_acknowledgements(tmp_path):
     assert transaction['user_id']==a['user']['id']
     assert transaction['device_id']==d
     assert transaction['updates']==response.json()['updates']
+
+
+def test_force_edits_merge_only_changed_fields_and_protect_quantities(tmp_path):
+    app,c,a,d,h=setup(tmp_path);tid,iid,item=stock(c,a,d,h,4)
+    # Another authenticated admin edits a different field while this client is offline.
+    peer_device=uid();peer=c.post('/v1/login',json=dict(username='admin',password='correct horse battery staple',device_id=peer_device)).json();ph={'Authorization':'Bearer '+peer['token']}
+    assert submit(c,peer,peer_device,ph,[entry('inventory_items',iid,item,{**item,'location':'New shelf','description':'Other edit'},1)])[0].json()['status']=='accepted'
+    offline={**item,'description':'My offline description'}
+    response,body=submit(c,a,d,h,[entry('inventory_items',iid,item,offline,1)])
+    assert response.json()['status']=='accepted'
+    updated=response.json()['updates'][0]['data']
+    assert updated['description']=='My offline description' and updated['location']=='New shelf'
+    assert c.post('/v1/batches',json=body,headers=h).json()==response.json()
+    assert submit(c,a,d,h,[entry('inventory_items',iid,item,None,1)])[0].json()['code']=='STALE_REVISION'
+    # Quantity edits are protected at the field level, not by unrelated description versions.
+    assert submit(c,a,d,h,[entry('inventory_items',iid,item,{**item,'total':5},1)])[0].json()['status']=='accepted'
+    assert submit(c,peer,peer_device,ph,[entry('inventory_items',iid,item,{**item,'total':6},1)])[0].json()['code']=='STALE_QUANTITY'
+    loan=lending(iid,5);assert submit(c,a,d,h,[entry('inventory_loans',uid(),None,loan)])[0].json()['status']=='accepted'
+    current={**updated,'total':5}
+    assert submit(c,a,d,h,[entry('inventory_items',iid,current,{**current,'total':4},4)])[0].json()['code']=='INSUFFICIENT_STOCK'
+    # Deleted records stay deleted, even for a forced description edit.
+    t=dict(name='Cable',brand='',model='',description='')
+    other_type=uid();assert submit(c,a,d,h,[entry('stock_types',other_type,None,{**t,'name':'Extra'})])[0].json()['status']=='accepted'
+    assert submit(c,a,d,h,[entry('stock_types',other_type,{**t,'name':'Extra'},None,1)])[0].json()['status']=='accepted'
+    assert submit(c,a,d,h,[entry('stock_types',other_type,{**t,'name':'Extra'},{**t,'name':'Extra','description':'Edit'},1)])[0].json()['code']=='DELETED'

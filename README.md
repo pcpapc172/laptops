@@ -122,3 +122,5 @@ cmake -B build -S . -DCMAKE_PREFIX_PATH="C:/Qt/6.x.x/msvc2022_64"
 cmake --build build --config Release
 ```
 پس از ساخت، فایل اجرایی در پوشه `build/Release/laptop_manager.exe` ایجاد می‌شود و داده‌ها به طور خودکار در `%localappdata%\laptops` ذخیره می‌شوند.
+
+In 4.0.0, normal description and record edits sync automatically against current server data. Only the fields edited are applied; the last server-accepted edit wins for the same field. Offline changes remain queued. Inventory quantities and deletions retain their validation checks.

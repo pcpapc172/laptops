@@ -58,7 +58,7 @@ inline bool editType(QWidget* parent, StockType& type) {
         StockType updated=type;
         updated.name=name->text().trimmed(); updated.brand=brand->text().trimmed();
         updated.model=model->text().trimmed(); updated.description=description->toPlainText().trimmed();
-        if (!DatabaseManager::instance().saveStockType(updated)) { showError(&dialog); return; }
+        if (!DatabaseManager::instance().saveStockType(updated,type.id?&type:nullptr)) { showError(&dialog); return; }
         type=updated; dialog.accept();
     });
     return dialog.exec()==QDialog::Accepted;
@@ -127,7 +127,7 @@ inline bool editItem(QWidget* parent, InventoryItem& item) {
         updated.brand=brand->text().trimmed(); updated.model=model->text().trimmed(); updated.code=code->text().trimmed();
         updated.location=location->text().trimmed(); updated.description=description->toPlainText().trimmed();
         updated.total=total->value(); updated.lowStockThreshold=threshold->value();
-        if(!DatabaseManager::instance().saveInventoryItem(updated,reason->text())) { showError(&dialog); return; }
+        if(!DatabaseManager::instance().saveInventoryItem(updated,reason->text(),item.id?&item:nullptr)) { showError(&dialog); return; }
         item=updated; dialog.accept();
     });
     return dialog.exec()==QDialog::Accepted;

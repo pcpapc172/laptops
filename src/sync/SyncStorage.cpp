@@ -54,6 +54,18 @@ bool updateShadow(QSqlDatabase db,const QJsonArray& updates) {
         if(!run(db,"INSERT INTO sync_shadow VALUES(?,?,?,?,?) ON CONFLICT(table_name,global_id) DO UPDATE SET revision=excluded.revision,deleted=excluded.deleted,body=excluded.body WHERE excluded.revision>=sync_shadow.revision",{table,id,u["revision"].toInt(),u["deleted"].toBool()?1:0,u["deleted"].toBool()?QVariant():json(u["data"].toObject())})) return false;
     } return true;
 }
+QJsonObject wireBatch(QSqlDatabase db,const QString& id) {
+    QSqlQuery batchQuery(db);batchQuery.prepare("SELECT user_id,device_id,operation FROM sync_batches WHERE id=?");batchQuery.addBindValue(id);
+    if(!batchQuery.exec()||!batchQuery.next())return {};
+    QJsonObject batch{{"id",id},{"user_id",batchQuery.value(0).toString()},{"device_id",batchQuery.value(1).toString()},{"operation",batchQuery.value(2).toString()},{"protocol",1}};batchQuery.finish();
+    QJsonArray entries;QSqlQuery q(db);q.prepare("SELECT table_name,global_id,before_body,after_body,revision,parent FROM sync_entries WHERE batch_id=? ORDER BY table_name,global_id");q.addBindValue(id);
+    if(!q.exec())return {};
+    while(q.next()) {
+        QJsonObject entry{{"table",q.value(0).toString()},{"entity_id",q.value(1).toString()},{"before",q.value(2).isNull()?QJsonValue():QJsonValue(object(q.value(2)))},{"after",q.value(3).isNull()?QJsonValue():QJsonValue(object(q.value(3)))},{"revision",q.value(4).toInt()}};
+        if(!q.value(5).isNull())entry["after_batch"]=q.value(5).toString();entries.append(entry);
+    }
+    batch["entries"]=entries;return batch;
+}
 }
 QSqlDatabase SyncStorage::database() { return QSqlDatabase::database(); }
 QString SyncStorage::lastError() { return error; }
@@ -145,16 +157,12 @@ bool SyncStorage::hasLegacyRecords() {
 int SyncStorage::count(const QString& status) { return scalar(database(),"SELECT COUNT(*) FROM sync_batches WHERE status=?",{status}).toInt(); }
 QJsonArray SyncStorage::conflicts() {
     QJsonArray a;QSqlQuery q(database());q.exec("SELECT id,operation,message,created,payload,result FROM sync_batches WHERE status='conflict' ORDER BY seq");
-    while(q.next()) a.append(QJsonObject{{"id",q.value(0).toString()},{"operation",q.value(1).toString()},{"message",q.value(2).toString()},{"created",q.value(3).toString()},{"payload",object(q.value(4))},{"result",object(q.value(5))}});return a;
+    while(q.next()) a.append(QJsonObject{{"id",q.value(0).toString()},{"operation",q.value(1).toString()},{"message",q.value(2).toString()},{"created",q.value(3).toString()},{"payload",q.value(4).isNull()?wireBatch(database(),q.value(0).toString()):object(q.value(4))},{"result",object(q.value(5))}});return a;
 }
 QJsonObject SyncStorage::nextBatch() {
     auto db=database();QSqlQuery q(db);q.prepare("SELECT id,user_id,device_id,operation,payload FROM sync_batches WHERE status='pending' AND user_id=? ORDER BY seq LIMIT 1");q.addBindValue(setting("user_id"));if(!q.exec()||!q.next())return {};
     if(!q.value(4).isNull())return object(q.value(4));
-    QJsonObject batch{{"id",q.value(0).toString()},{"user_id",q.value(1).toString()},{"device_id",q.value(2).toString()},{"operation",q.value(3).toString()},{"protocol",1}};q.finish();
-    QJsonArray entries; q.prepare("SELECT table_name,global_id,before_body,after_body,revision,parent FROM sync_entries WHERE batch_id=? ORDER BY table_name,global_id");q.addBindValue(batch["id"].toString());q.exec();
-    while(q.next()) {QJsonObject e{{"table",q.value(0).toString()},{"entity_id",q.value(1).toString()},{"before",q.value(2).isNull()?QJsonValue():QJsonValue(object(q.value(2)))},{"after",q.value(3).isNull()?QJsonValue():QJsonValue(object(q.value(3)))},{"revision",q.value(4).toInt()}};
-        if(!q.value(5).isNull())e["after_batch"]=q.value(5).toString(); entries.append(e);}
-    batch["entries"]=entries;
+    QString id=q.value(0).toString();q.finish();auto batch=wireBatch(db,id);if(batch.isEmpty())return {};
     // Freeze exact wire payload before sending; a restart must replay identical bytes and IDs.
     if(!run(db,"UPDATE sync_batches SET payload=? WHERE id=? AND payload IS NULL",{json(batch),batch["id"].toString()}))return {};
     return batch;
@@ -308,4 +316,26 @@ bool SyncStorage::retry(const QString& id) {
     }q.finish();
     if(ok)ok=run(db,"UPDATE sync_batches SET status='discarded' WHERE id=?",{id})&&project(db);
     if(!ok){db.rollback();return false;}return db.commit();
+}
+
+void SyncStorage::recoverStaleEdits() {
+    if(setting("edit_policy")!="changed_fields_last_writer")return;
+    QStringList recover;
+    for(const auto& value:conflicts()) {
+        auto conflict=value.toObject();
+        if(conflict["result"].toObject()["code"].toString()!="STALE_REVISION")continue;
+        auto payload=conflict["payload"].toObject();
+        if(payload["user_id"].toString()!=setting("user_id"))continue;
+        auto entries=payload["entries"].toArray();bool eligible=!entries.isEmpty(),edited=false;
+        for(const auto& v:entries) {
+            auto entry=v.toObject();QString table=entry["table"].toString();
+            auto before=entry["before"],after=entry["after"];
+            if(table=="inventory_events"&&before.isNull()&&after.isObject()&&after.toObject()["action"]=="EDIT")continue;
+            if(!before.isObject()||!after.isObject()||!QStringList{"loans","stock_types","inventory_items","preset_teachers","preset_grades"}.contains(table)) {eligible=false;break;}
+            if(table=="inventory_items"&&before.toObject()["total"]!=after.toObject()["total"]) {eligible=false;break;}
+            edited=true;
+        }
+        if(eligible&&edited)recover<<conflict["id"].toString();
+    }
+    for(const auto& id:recover)if(retry(id)&&mutationCallback)mutationCallback(); // Preserve receipts; schedule upload.
 }

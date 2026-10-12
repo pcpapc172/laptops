@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(LaptopManager VERSION 3.1.0 LANGUAGES CXX)
+project(LaptopManager VERSION 4.0.0 LANGUAGES CXX)
 
 if(MSVC)
     add_compile_options(/utf-8)

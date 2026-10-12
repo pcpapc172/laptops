@@ -122,10 +122,23 @@ QList<StockType> DatabaseManager::getStockTypes() {
     return result;
 }
 
-bool DatabaseManager::saveStockType(StockType& type) {
+bool DatabaseManager::saveStockType(StockType& type, const StockType* original) {
     SyncMutationScope syncScope("saveStockType");
     if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
+    if(original&&type.id) {
+        if(original->id!=type.id)return inventoryFailure("شناسه نوع کالا معتبر نیست.");
+        bool found=false;
+        for(const auto& current:getStockTypes())if(current.id==type.id) {
+            found=true;
+            if(type.name==original->name)type.name=current.name;
+            if(type.brand==original->brand)type.brand=current.brand;
+            if(type.model==original->model)type.model=current.model;
+            if(type.description==original->description)type.description=current.description;
+            break;
+        }
+        if(!found)return inventoryFailure("نوع کالا حذف شده است.");
+    }
     if (type.name.trimmed().isEmpty()) return inventoryFailure("نام نوع کالا را وارد کنید.");
     QSqlQuery q(m_db);
     q.prepare(type.id ? "UPDATE stock_types SET name=:name,brand=:brand,model=:model,description=:description WHERE id=:id"
@@ -173,7 +186,7 @@ bool DatabaseManager::appendInventoryEvent(int itemId, const QString& action, in
     return q.exec();
 }
 
-bool DatabaseManager::saveInventoryItem(InventoryItem& item, const QString& adjustmentReason) {
+bool DatabaseManager::saveInventoryItem(InventoryItem& item, const QString& adjustmentReason, const InventoryItem* original) {
     SyncMutationScope syncScope("saveInventoryItem");
     if (!syncScope.allowed()) return inventoryFailure("برای این عملیات، ورود به حساب با دسترسی مناسب لازم است.");
     m_inventoryError.clear();
@@ -187,6 +200,18 @@ bool DatabaseManager::saveInventoryItem(InventoryItem& item, const QString& adju
         QSqlQuery old(m_db); old.prepare(ItemSelect+" WHERE i.id=:id"); old.bindValue(":id",item.id);
         if (!old.exec() || !old.next()) return fail("کالا پیدا نشد.");
         const auto previous=readItem(old); oldTotal=previous.total;
+        if(original) {
+            if(original->id!=item.id)return fail("شناسه کالا معتبر نیست.");
+            if(item.typeId==original->typeId)item.typeId=previous.typeId;
+            if(item.name==original->name)item.name=previous.name;
+            if(item.brand==original->brand)item.brand=previous.brand;
+            if(item.model==original->model)item.model=previous.model;
+            if(item.code==original->code)item.code=previous.code;
+            if(item.description==original->description)item.description=previous.description;
+            if(item.location==original->location)item.location=previous.location;
+            if(item.total==original->total)item.total=previous.total;
+            if(item.lowStockThreshold==original->lowStockThreshold)item.lowStockThreshold=previous.lowStockThreshold;
+        }
         if (item.total<previous.loaned+previous.missing) return fail("تعداد کل نمی‌تواند از مجموع امانت و مفقودی کمتر باشد.");
         if (item.total!=oldTotal && adjustmentReason.trimmed().isEmpty()) return fail("دلیل تغییر تعداد موجودی را وارد کنید.");
     }

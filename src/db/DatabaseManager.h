@@ -19,7 +19,7 @@ public:
     bool addLoan(LoanRecord& record);
     bool returnLoan(int id, const QString& returnerName, const QString& returnCondition, const QString& notes = QString());
     bool deleteLoan(int id);
-    bool updateLoan(const LoanRecord& record);
+    bool updateLoan(const LoanRecord& record, const LoanRecord* original=nullptr);
     QString loanError() const { return m_loanError; }
     bool updateLoanNotes(int id, const QString& notes);
 
@@ -41,10 +41,10 @@ public:
 
     // Inventory: totals include available, loaned, and missing units.
     QList<StockType> getStockTypes();
-    bool saveStockType(StockType& type);
+    bool saveStockType(StockType& type, const StockType* original=nullptr);
     bool removeStockType(int id);
     QList<InventoryItem> getInventoryItems(const QString& search = QString(), int typeId = 0);
-    bool saveInventoryItem(InventoryItem& item, const QString& adjustmentReason = QString());
+    bool saveInventoryItem(InventoryItem& item, const QString& adjustmentReason = QString(), const InventoryItem* original=nullptr);
     QList<InventoryLoan> getInventoryLoans(bool activeOnly = false);
     bool lendInventory(int itemId, int quantity, const QString& borrower,
                        const QDateTime& dueTime = QDateTime(), const QString& notes = QString());

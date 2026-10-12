@@ -24,6 +24,7 @@ public:
     static bool recordResult(const QJsonObject& result);
     static bool discard(const QString& id);
     static bool retry(const QString& id);
+    static void recoverStaleEdits();
     static QString lastError();
     static void setMutationCallback(std::function<void()> callback);
 private:

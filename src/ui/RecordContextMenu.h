@@ -20,9 +20,10 @@ inline void editRecordAt(QTableWidget* table, const QList<LoanRecord>* records,
     if (row < 0 || row >= records->size()) return;
 
     table->selectRow(row);
-    LoanRecord edited = records->at(row);
+    const LoanRecord original = records->at(row);
+    LoanRecord edited = original;
     if (!RecordEditDialog::editRecord(context, edited)) return;
-    if (!DatabaseManager::instance().updateLoan(edited)) {
+    if (!DatabaseManager::instance().updateLoan(edited,&original)) {
         QMessageBox::critical(context, "خطا", "ذخیره تغییرات رکورد انجام نشد.\n" + DatabaseManager::instance().loanError());
         return;
     }

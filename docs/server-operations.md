@@ -72,3 +72,7 @@ Client integer allocation stays above all mapped identities, including remote to
 ## Login and sync interface (3.1.0)
 
 The startup password dialog shows a loading bar during online authentication. Escape, repeated Enter, and the window close action do not dismiss the gate; the explicit exit button closes the application and is disabled while authentication is in progress. Failed authentication leaves the prompt open. Settings shows sync progress, status and conflict controls without a second login form. Logout reopens the startup password gate.
+
+## Seamless edits (4.0.0)
+
+Normal descriptions, notes and metadata apply as changed-field patches to the current server record. Same-field edits use server arrival order, including uploads queued offline. Open forms preserve untouched fields updated while the dialog was open. After login with a server advertising the new policy, old ordinary `STALE_REVISION` edits are automatically requeued, retaining their original proposals and receipts. Existing quantity adjustments, deletes and import reviews still require review. Conflicts quarantined before first upload now show their durable entries in Settings.

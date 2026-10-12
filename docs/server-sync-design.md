@@ -1,4 +1,4 @@
-# Laptop Manager 3.0.0: shared server and offline synchronization
+# Laptop Manager 4.0.0: shared server and offline synchronization
 
 The server owns the shared records. Desktop SQLite is a durable local cache and operation queue. Synchronization transfers transactions over HTTPS; database files are never shared over the network.
 
@@ -12,7 +12,7 @@ Server transactions serialize validation, mutations, audit events, and change-fe
 
 ## Conflict rules
 
-Metadata changes require the expected revision. Counter updates for returns and missing/recovered quantities use bounded deltas and revalidate totals. Available stock must stay nonnegative, and an active laptop cannot be lent twice. A transaction either commits completely or is rejected completely. Dependent changes cannot bypass a rejected parent transaction.
+Metadata edits patch only changed fields onto current server data; the last server-accepted edit wins for the same field. Deletes require the expected revision, and stock total adjustments check their starting quantity. Counter updates for returns and missing/recovered quantities use bounded deltas and revalidate totals. Available stock must stay nonnegative, and an active laptop cannot be lent twice. A transaction either commits completely or is rejected completely. Dependent changes cannot bypass a rejected parent transaction.
 
 The local cache keeps accepted server state separately from queued changes. Rejected changes remain visible in a conflict list; they never disappear silently or overwrite server state. Users can inspect a conflict, keep its details, and explicitly discard or retry against current server state. Unrelated changes continue syncing.
 
@@ -42,3 +42,9 @@ Concurrent lending of the last unit; simultaneous metadata edits; duplicate uplo
 ## Current deployment
 
 The supplied laptop database was identified by its owner as dummy data. The temporary import and its server backups were cleared; the administrator account was retained. Subsequently, an explicitly supplied second database containing important preserved records was backed up, validated, and imported: eight laptop loans and 33 presets/types. The original file was unchanged. The original laptop database has a private local backup. No automatic legacy upload runs on launch.
+
+## 4.0.0 edit policy
+
+Ordinary edits apply only changed fields to the current server record, without rejecting a stale record revision. The last edit accepted by the server wins for the same field; unrelated changes remain intact. This arrival order includes queued offline edits. Password/role checks, atomic transactions, receipt replay, deletion tombstones, active laptop uniqueness and inventory invariants still apply. Deletes retain revision checks. Inventory total adjustments reject a changed starting quantity so audit adjustment deltas remain accurate; unrelated metadata revisions do not block them. Return/recovery quantities still merge as bounded positive deltas.
+
+The client saves only intended edits from forms: it compares with the record shown when the form opened and preserves incoming changes to fields left untouched. It automatically requeues ordinary metadata edits previously rejected with `STALE_REVISION` when the server advertises `changed_fields_last_writer`; preserved receipts and original proposals remain available. It never automatically retries legacy imports, deletes or quantity adjustments. Unsent quarantined batches expose their durable entries in Settings even if no wire payload had been frozen yet.

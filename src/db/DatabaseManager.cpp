@@ -245,44 +245,32 @@ bool DatabaseManager::deleteLoan(int id) {
     return query.exec();
 }
 
-bool DatabaseManager::updateLoan(const LoanRecord& record) {
+bool DatabaseManager::updateLoan(const LoanRecord& record, const LoanRecord* original) {
     SyncMutationScope syncScope("updateLoan");
     m_loanError.clear();
     if (!syncScope.allowed()) {m_loanError=syncScope.denialReason();return false;}
     if (!m_db.isOpen()) {m_loanError="دیتابیس محلی باز نیست.";return false;}
 
-    QSqlQuery query(m_db);
-    query.prepare(R"(
-        UPDATE loans SET
-            bell_period = :bell_period,
-            grade_level = :grade_level,
-            teacher_name = :teacher_name,
-            recipient_name = :recipient_name,
-            laptop_number = :laptop_number,
-            initial_condition = :initial_condition,
-            return_condition = :return_condition,
-            returner_name = :returner_name,
-            notes = :notes,
-            status = :status,
-            lend_time = :lend_time,
-            return_time = :return_time
-        WHERE id = :id
-    )");
-
-    query.bindValue(":bell_period", record.bellPeriod);
-    query.bindValue(":grade_level", record.gradeLevel.trimmed());
-    query.bindValue(":teacher_name", record.teacherName.trimmed());
-    query.bindValue(":recipient_name", record.recipientName.trimmed());
-    query.bindValue(":laptop_number", record.laptopNumber.trimmed());
-    query.bindValue(":initial_condition", record.initialCondition.trimmed());
-    query.bindValue(":return_condition", record.returnCondition.trimmed());
-    query.bindValue(":returner_name", record.returnerName.trimmed());
-    query.bindValue(":notes", record.notes.trimmed());
-    query.bindValue(":status", record.status);
-    query.bindValue(":lend_time", record.lendTime.toString(Qt::ISODate));
-    query.bindValue(":return_time", record.returnTime.isValid()
-                    ? record.returnTime.toString(Qt::ISODate) : QVariant());
-    query.bindValue(":id", record.id);
+    if(original&&original->id!=record.id) {m_loanError="شناسه رکورد ویرایش معتبر نیست.";return false;}
+    QStringList fields;QVariantList values;
+    auto field=[&](const QString& name,const QVariant& desired,const QVariant& initial) {
+        if(!original||desired!=initial) {fields<<name+"=?";values<<desired;}
+    };
+    field("bell_period",record.bellPeriod,original?QVariant(original->bellPeriod):QVariant());
+    field("grade_level",record.gradeLevel.trimmed(),original?QVariant(original->gradeLevel.trimmed()):QVariant());
+    field("teacher_name",record.teacherName.trimmed(),original?QVariant(original->teacherName.trimmed()):QVariant());
+    field("recipient_name",record.recipientName.trimmed(),original?QVariant(original->recipientName.trimmed()):QVariant());
+    field("laptop_number",record.laptopNumber.trimmed(),original?QVariant(original->laptopNumber.trimmed()):QVariant());
+    field("initial_condition",record.initialCondition.trimmed(),original?QVariant(original->initialCondition.trimmed()):QVariant());
+    field("return_condition",record.returnCondition.trimmed(),original?QVariant(original->returnCondition.trimmed()):QVariant());
+    field("returner_name",record.returnerName.trimmed(),original?QVariant(original->returnerName.trimmed()):QVariant());
+    field("notes",record.notes.trimmed(),original?QVariant(original->notes.trimmed()):QVariant());
+    field("status",record.status,original?QVariant(original->status):QVariant());
+    field("lend_time",record.lendTime.toString(Qt::ISODate),original?QVariant(original->lendTime.toString(Qt::ISODate)):QVariant());
+    field("return_time",record.returnTime.isValid()?QVariant(record.returnTime.toString(Qt::ISODate)):QVariant(),original&&original->returnTime.isValid()?QVariant(original->returnTime.toString(Qt::ISODate)):QVariant());
+    if(fields.isEmpty())return true;
+    QSqlQuery query(m_db);query.prepare("UPDATE loans SET "+fields.join(',')+" WHERE id=?");
+    for(const auto& value:values)query.addBindValue(value);query.addBindValue(record.id);
 
     if(!query.exec()) {m_loanError=query.lastError().text();qWarning()<<"Update loan failed:"<<m_loanError;return false;}
     if(query.numRowsAffected()!=1) {m_loanError="این رکورد دیگر در دیتابیس محلی وجود ندارد؛ فهرست را تازه کنید.";return false;}

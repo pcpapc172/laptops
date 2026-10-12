@@ -77,6 +77,7 @@ void SyncEngine::attemptLogin(const QString& username,const QString& password,bo
         }
         if(response["protocol"].toInt()!=1){state("نسخه سرور با برنامه سازگار نیست.");emit loginFinished(false,false,m_status);return;}
         if(!SyncStorage::configureUser(response["user"].toObject(),&why)){state(why);emit loginFinished(false,false,why);return;}
+        SyncStorage::setSetting("edit_policy",response["edit_policy"].toString());
         // This verifier is created only after the server authenticated this exact password.
         OfflineCredentials::remember(password);
         m_token=response["token"].toString().toUtf8();m_sessionUsername=SyncStorage::setting("username");
@@ -146,13 +147,13 @@ void SyncEngine::pull(bool send) {
                 request("GET","/v1/snapshot",{},[this,send](bool success,QJsonValue snap,QString message){
                     if(!success){failed(message,m_lastHttpStatus);return;}
                     if(!SyncStorage::applySnapshot(snap.toObject())){failed(SyncStorage::lastError(),503);return;}
-                    emit dataChanged();if(send)push();else finished();
+                    SyncStorage::recoverStaleEdits();emit dataChanged();if(send)push();else finished();
                 });return;
             }
             failed(why,m_lastHttpStatus);return;
         }
         auto feed=value.toObject();bool applied=snapshot?SyncStorage::applySnapshot(feed):SyncStorage::applyChanges(feed);
-        if(!applied){failed(SyncStorage::lastError(),503);return;}emit dataChanged();
+        if(!applied){failed(SyncStorage::lastError(),503);return;}SyncStorage::recoverStaleEdits();emit dataChanged();
         if(feed["has_more"].toBool()){pull(send);return;}
         if(send)push();else finished();
     });

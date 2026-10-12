@@ -208,7 +208,7 @@ class Store:
 
 def create_app(path=None):
     store = Store(path or os.environ.get('LAPTOPS_SERVER_DB', '/var/lib/laptop-manager/server.db'))
-    app = FastAPI(title='Laptop Manager Server', version='3.0.1', docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title='Laptop Manager Server', version='4.0.0', docs_url=None, redoc_url=None, openapi_url=None)
     app.state.store = store
 
     @app.middleware('http')
@@ -231,7 +231,7 @@ def create_app(path=None):
     def health():
         with store.connection() as db:
             db.execute('SELECT 1')
-        return {'status': 'ok', 'version': '3.0.1', 'protocol': PROTOCOL}
+        return {'status': 'ok', 'version': '4.0.0', 'edit_policy': 'changed_fields_last_writer', 'protocol': PROTOCOL}
 
     @app.post('/v1/login')
     def login(body: Login, request: Request):
@@ -269,7 +269,7 @@ def create_app(path=None):
                        (hashlib.sha256(token.encode()).hexdigest(), user['id'], body.device_id, int(time.time()) + 43200))
             instance = store.instance(db)
         return {'token': token, 'user': {k: user[k] for k in ['id', 'username', 'display_name', 'role']},
-                'instance_id': instance, 'protocol': PROTOCOL, 'expires_in': 43200}
+                'instance_id': instance, 'edit_policy': 'changed_fields_last_writer', 'protocol': PROTOCOL, 'expires_in': 43200}
 
     @app.post('/v1/logout')
     def logout(authorization: str | None = Header(default=None)):
@@ -287,7 +287,7 @@ def create_app(path=None):
             db.execute('BEGIN')
             user = store.user(db, bearer(authorization))
             rows = db.execute('SELECT * FROM entities').fetchall()
-            return {'instance_id': store.instance(db), 'protocol': PROTOCOL,
+            return {'instance_id': store.instance(db), 'edit_policy': 'changed_fields_last_writer', 'protocol': PROTOCOL,
                     'cursor': int(db.execute("SELECT value FROM meta WHERE key='cursor'").fetchone()[0]),
                     'role': user['role'], 'entities': [{'table': r['table_name'], 'entity_id': r['id'], 'revision': r['revision'],
                         'deleted': bool(r['deleted']), 'data': json.loads(r['body']) if r['body'] else None} for r in rows]}

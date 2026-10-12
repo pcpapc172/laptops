@@ -177,8 +177,13 @@ def apply_entries(state, versions, entries, role, expected_revision):
             raise Conflict('DELETED', 'این رکورد توسط کاربر دیگری حذف شده است.')
         current = candidate[key]
         counter_update = table in COUNTERS and changed <= (COUNTERS[table] | {'last_return_time'})
-        if not counter_update and versions.get(key, 0) != expected_revision(entry, key):
-            raise Conflict('STALE_REVISION', 'رکورد توسط کاربر دیگری تغییر کرده است؛ هر دو نسخه برای بررسی حفظ شدند.')
+        revision = expected_revision(entry, key)
+        # Ordinary edits apply their changed fields to the current record. Arrival
+        # order resolves same-field edits; unrelated fields are never replaced.
+        if after is None and versions.get(key, 0) != revision:
+            raise Conflict('STALE_REVISION', 'رکورد پیش از حذف تغییر کرده است؛ نسخه فعلی را بررسی کنید.')
+        if table == 'inventory_items' and after is not None and 'total' in changed and current['total'] != before['total']:
+            raise Conflict('STALE_QUANTITY', 'تعداد موجودی تغییر کرده است؛ شمارش فعلی و دلیل اصلاح را بررسی کنید.')
         if after is None:
             del candidate[key]
         elif counter_update:
