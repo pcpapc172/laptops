@@ -1,14 +1,21 @@
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <cassert>
 #include <iostream>
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QTemporaryDir>
 #include "../src/db/DatabaseManager.h"
 #include "../src/models/LoanRecord.h"
 #include "../src/utils/DateTimeUtils.h"
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
+    QTemporaryDir isolated;
+    if(!isolated.isValid())return 1;
+    qputenv("LAPTOPS_DATA_DIR",isolated.path().toUtf8());
 
     std::cout << "--- Running Automated Test Suite for Laptop Manager ---" << std::endl;
 
