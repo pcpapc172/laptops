@@ -99,3 +99,9 @@ cat /var/lib/laptop-manager/cloud-backups/last-cloud-success.json
 ```
 
 For recovery, retrieve the dated `.db.gz` from the private bucket, check the SHA-256 against its manifest, decompress it, verify `PRAGMA integrity_check`, then use the server's restore command with the API stopped. Restore invalidates sessions and assigns a new server epoch. Keep credentials and recovery files out of Git.
+
+## Direct application downloads
+
+Release binaries are mirrored under `/var/www/laptops-downloads/4.1.0/`, served by nginx at `/downloads/` on both `laptops.pcpapc172.ir` and `laptops-cf.pcpapc172.ir`. This is a separate public directory; the server database, backups and credentials remain outside all web roots. Directory listing is disabled. The landing page links Windows ZIP, Linux tar.gz, the signed minified Android release APK, and SHA256SUMS. The files are copies of the published release artifacts, so users do not need GitHub to download them.
+
+For future releases, stage files in a new version directory, verify hashes, then copy them into the public download root and update its index. Do not overwrite a versioned artifact with a different build. Verify the complete downloaded bytes on both routes after publishing. Keep API `no-store` response policy separate from public release download caching.
