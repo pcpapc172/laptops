@@ -47,6 +47,38 @@ def review_records(path, review_id):
         return state
 
 
+def import_snapshot(store, path):
+    """Recover canonical client data into an empty server, retaining tombstones.
+
+    Caches cannot recover password hashes, server receipts or audit history.
+    A fresh epoch prevents existing clients from reusing old cursors/receipts.
+    """
+    from .domain import identity, integer
+    snapshot=json.loads(Path(path).read_text())
+    if snapshot.get('protocol')!=1:raise ValueError('Unsupported snapshot protocol')
+    rows=snapshot.get('entities')
+    if not isinstance(rows,list) or not rows:raise ValueError('Snapshot is empty')
+    state={};seen=set()
+    for row in rows:
+        table=row['table'];ident=identity(row['entity_id']);key=(table,ident)
+        if table not in TABLES or key in seen:raise ValueError('Invalid or duplicate entity')
+        seen.add(key);integer(row['revision'],1,2147483647)
+        if type(row.get('deleted')) is not bool:raise ValueError('Invalid tombstone')
+        if row['deleted']:
+            if row.get('data') is not None:raise ValueError('Deleted entity contains data')
+        else:state[key]=row['data']
+    validate(state)
+    with store.transaction() as db:
+        if any(db.execute('SELECT COUNT(*) FROM '+table).fetchone()[0] for table in ['entities','changes','receipts','audit']):
+            raise ValueError('Recovery requires an empty server')
+        for row in rows:
+            db.execute('INSERT INTO entities VALUES(?,?,?,?,?)',(row['table'],row['entity_id'],row['revision'],int(row['deleted']),None if row['deleted'] else json.dumps(row['data'],ensure_ascii=False)))
+        db.execute("UPDATE meta SET value=? WHERE key='instance_id'",(uuid.uuid4().hex,))
+        db.execute("UPDATE meta SET value='0' WHERE key='cursor'")
+        db.execute('DELETE FROM sessions')
+    return {'restored':len(state),'tombstones':len(rows)-len(state),'new_epoch':True}
+
+
 def legacy_id(table,ident):
     return hashlib.sha256(f'laptops-legacy:{table}:{ident}'.encode()).hexdigest()[:32]
 
@@ -64,6 +96,7 @@ def main():
     sub=parser.add_subparsers(dest='command',required=True)
     bootstrap=sub.add_parser('bootstrap');bootstrap.add_argument('--credentials-file',required=True)
     imp=sub.add_parser('import');imp.add_argument('--legacy-db',required=True);imp.add_argument('--review-id')
+    recovery=sub.add_parser('import-snapshot');recovery.add_argument('--input',required=True)
     b=sub.add_parser('backup');b.add_argument('--output',required=True)
     r=sub.add_parser('restore');r.add_argument('--input',required=True)
     args=parser.parse_args()
@@ -81,13 +114,15 @@ def main():
             db.execute('DELETE FROM sessions')
         print('Restore completed with new instance epoch; all clients must log in again');return
     store=Store(args.db)
+    if args.command=='import-snapshot':
+        print(json.dumps(import_snapshot(store,args.input)));return
     if args.command=='bootstrap':
         with store.connection() as db:
             if db.execute('SELECT COUNT(*) FROM users').fetchone()[0]:raise ValueError('Users already exist')
         password=secrets.token_urlsafe(24)
         file=Path(args.credentials_file);file.parent.mkdir(parents=True,exist_ok=True)
         fd=os.open(file,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
-        with os.fdopen(fd,'w') as out:out.write(json.dumps({'server':'https://13.42.221.242','username':'admin','password':password},indent=2)+'\n')
+        with os.fdopen(fd,'w') as out:out.write(json.dumps({'server':'https://laptops.pcpapc172.ir','username':'admin','password':password},indent=2)+'\n')
         store.create_user('admin','مدیر',password)
         print('Administrator created; credentials written to private file')
     elif args.command=='import':

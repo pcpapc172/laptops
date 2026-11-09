@@ -208,7 +208,7 @@ class Store:
 
 def create_app(path=None):
     store = Store(path or os.environ.get('LAPTOPS_SERVER_DB', '/var/lib/laptop-manager/server.db'))
-    app = FastAPI(title='Laptop Manager Server', version='4.0.0', docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(title='Laptop Manager Server', version='4.1.0', docs_url=None, redoc_url=None, openapi_url=None)
     app.state.store = store
 
     @app.middleware('http')
@@ -231,7 +231,7 @@ def create_app(path=None):
     def health():
         with store.connection() as db:
             db.execute('SELECT 1')
-        return {'status': 'ok', 'version': '4.0.0', 'edit_policy': 'changed_fields_last_writer', 'protocol': PROTOCOL}
+        return {'status': 'ok', 'version': '4.1.0', 'edit_policy': 'changed_fields_last_writer', 'protocol': PROTOCOL}
 
     @app.post('/v1/login')
     def login(body: Login, request: Request):

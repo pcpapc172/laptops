@@ -14,7 +14,7 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("LaptopManager");
-    app.setApplicationVersion("4.0.0");
+    app.setApplicationVersion("4.1.0");
     app.setApplicationDisplayName("سامانه مدیریت امانت لپ‌تاپ");
     app.setOrganizationName("LaptopManagementSystem");
 
@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
 
     if (app.arguments().contains("--prepare-cache")) return 0;
 
-    if (!qEnvironmentVariableIsSet("LAPTOPS_DATA_DIR") && SyncStorage::setting("endpoint").isEmpty())
-        SyncStorage::setSetting("endpoint", "https://13.42.221.242");
+    if (!qEnvironmentVariableIsSet("LAPTOPS_DATA_DIR") && (SyncStorage::setting("endpoint").isEmpty() || SyncStorage::setting("endpoint")=="https://13.42.221.242"))
+        SyncStorage::setSetting("endpoint", "https://laptops.pcpapc172.ir");
 
     // Keep records hidden until a password has been checked online or against an
     // unexpired offline verifier. Credential files cannot bypass this gate.

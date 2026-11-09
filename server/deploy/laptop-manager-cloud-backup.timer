@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily Cloudflare backup at 3 PM Iran time
+
+[Timer]
+OnCalendar=*-*-* 15:00:00 Asia/Tehran
+AccuracySec=1s
+Persistent=true
+Unit=laptop-manager-cloud-backup.service
+
+[Install]
+WantedBy=timers.target

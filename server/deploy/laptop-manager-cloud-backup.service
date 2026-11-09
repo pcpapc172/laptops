@@ -1,0 +1,24 @@
+[Unit]
+Description=Verified Laptop Manager backup to private Cloudflare R2
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=6h
+StartLimitBurst=4
+
+[Service]
+Type=oneshot
+User=laptop-manager
+Group=laptop-manager
+WorkingDirectory=/opt/laptop-manager
+LoadCredential=r2.json:/etc/laptop-manager/r2-backup.json
+ExecStart=/opt/laptop-manager/venv/bin/python -m server.cloud_backup --db /var/lib/laptop-manager/server.db --directory /var/lib/laptop-manager/cloud-backups --config ${CREDENTIALS_DIRECTORY}/r2.json
+UMask=0077
+TimeoutStartSec=10min
+Restart=on-failure
+RestartSec=15min
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/laptop-manager
+MemoryMax=192M

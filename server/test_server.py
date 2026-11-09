@@ -201,3 +201,25 @@ def test_force_edits_merge_only_changed_fields_and_protect_quantities(tmp_path):
     other_type=uid();assert submit(c,a,d,h,[entry('stock_types',other_type,None,{**t,'name':'Extra'})])[0].json()['status']=='accepted'
     assert submit(c,a,d,h,[entry('stock_types',other_type,{**t,'name':'Extra'},None,1)])[0].json()['status']=='accepted'
     assert submit(c,a,d,h,[entry('stock_types',other_type,{**t,'name':'Extra'},{**t,'name':'Extra','description':'Edit'},1)])[0].json()['code']=='DELETED'
+
+
+def test_snapshot_recovery_retains_tombstones_and_changes_epoch(tmp_path):
+    import json,hashlib
+    from server.manage import import_snapshot
+    app,c,a,d,h=setup(tmp_path)
+    ident,deleted=uid(),uid()
+    snapshot={'protocol':1,'instance_id':uid(),'cursor':300,'entities':[
+        {'table':'preset_teachers','entity_id':ident,'revision':4,'deleted':False,'data':{'name':'Recovered teacher'}},
+        {'table':'preset_teachers','entity_id':deleted,'revision':3,'deleted':True,'data':None}]}
+    source=tmp_path/'snapshot.json';source.write_text(json.dumps(snapshot));digest=hashlib.sha256(source.read_bytes()).hexdigest()
+    result=import_snapshot(app.state.store,source)
+    assert result=={'restored':1,'tombstones':1,'new_epoch':True}
+    assert hashlib.sha256(source.read_bytes()).hexdigest()==digest
+    assert c.get('/v1/snapshot',headers=h).status_code==401
+    auth=c.post('/v1/login',json={'username':'admin','password':'correct horse battery staple','device_id':d}).json()
+    assert auth['instance_id']!=snapshot['instance_id'] and auth['instance_id']!=a['instance_id']
+    recovered=c.get('/v1/snapshot',headers={'Authorization':'Bearer '+auth['token']}).json()
+    assert recovered['cursor']==0 and len(recovered['entities'])==2
+    assert next(r for r in recovered['entities'] if r['entity_id']==deleted)['deleted']
+    import pytest
+    with pytest.raises(ValueError,match='empty server'):import_snapshot(app.state.store,source)

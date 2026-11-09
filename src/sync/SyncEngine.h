@@ -30,6 +30,8 @@ signals:
 private:
     explicit SyncEngine(QObject* parent);
     void request(const QString& method,const QString& path,const QJsonObject& body,Callback callback);
+    void requestAt(const QString& method,const QString& path,const QJsonObject& body,Callback callback,const QString& endpoint,const QString& fallback);
+    qint64 m_fallbackUntil=0;
     void attemptLogin(const QString& username,const QString& password,bool reconnect);
     void tick();
     void pull(bool send);

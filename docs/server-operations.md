@@ -76,3 +76,26 @@ The startup password dialog shows a loading bar during online authentication. Es
 ## Seamless edits (4.0.0)
 
 Normal descriptions, notes and metadata apply as changed-field patches to the current server record. Same-field edits use server arrival order, including uploads queued offline. Open forms preserve untouched fields updated while the dialog was open. After login with a server advertising the new policy, old ordinary `STALE_REVISION` edits are automatically requeued, retaining their original proposals and receipts. Existing quantity adjustments, deletes and import reviews still require review. Conflicts quarantined before first upload now show their durable entries in Settings.
+
+## 4.1.0 domain recovery (2026-11-09)
+
+The service runs on Debian 13 at `51.20.165.160` (SSH account `admin`). Primary endpoint: `https://laptops.pcpapc172.ir`; Cloudflare fallback: `https://laptops-cf.pcpapc172.ir`. Both hostnames proxy to the same loopback API and share one database. Certbot webroot HTTP-01 issued a certificate covering both names; the timer renews automatically and a deploy hook checks/reloads nginx. HTTP port 80 remains reachable for renewal. Authenticated responses include `Cache-Control: no-store`.
+
+Recovery used consistent private backups of both device caches. The phone at cursor 300 contained every laptop row at cursor 298: 95 loans (93 returned, 2 active), 18 teachers, 8 grades, 7 stock types, and 30 tombstones. A fresh epoch invalidates old cursors. Original caches/journals were retained privately. Server-only password hashes, account lists, receipts and audit history were unavailable; a random-password admin was bootstrapped, and the owner will recreate other accounts. The generated credential is stored in a mode-0600 file; never add it or any recovery data to Git.
+
+Clients migrate the old IP default to the primary domain, retry replay-safe requests on connection/5xx failures through the Cloudflare domain, and retain exact mutation IDs/payloads. Authentication failures/rate limits do not trigger fallback. Both certificates are validated; user creation is never blindly replayed after an uncertain response. A working fallback is retained for 60 seconds before checking the direct path again. Daily consistent backups are enabled on the new host.
+
+## Daily off-site Cloudflare backups
+
+`laptop-manager-cloud-backup.timer` runs at **15:00 Asia/Tehran** (11:30 UTC). Each run uses SQLite's online backup API, checks integrity, compresses a private local copy, uploads a uniquely dated object to private R2 bucket `laptops-private-backups`, downloads it again, checks its SHA-256 and opens the decompressed SQLite backup for a restore integrity check. A matching manifest is uploaded and verified; only then is `last-cloud-success.json` updated. Existing objects are not overwritten or automatically deleted. Source data, accounts, password hashes, receipts and audit history are included in these complete server backups.
+
+The token is stored in `/etc/laptop-manager/r2-backup.json` with root-only permissions, passed to the unprivileged service using systemd `LoadCredential`. It is never in source, command-line arguments or logged API responses. Failed runs preserve the local backup, fail visibly in systemd and retry every 15 minutes (four attempts per six hours). `Persistent=true` catches up after server downtime. Daily local backups remain enabled separately.
+
+```sh
+systemctl list-timers laptop-manager-cloud-backup.timer
+systemctl status laptop-manager-cloud-backup.service
+journalctl -u laptop-manager-cloud-backup.service
+cat /var/lib/laptop-manager/cloud-backups/last-cloud-success.json
+```
+
+For recovery, retrieve the dated `.db.gz` from the private bucket, check the SHA-256 against its manifest, decompress it, verify `PRAGMA integrity_check`, then use the server's restore command with the API stopped. Restore invalidates sessions and assigns a new server epoch. Keep credentials and recovery files out of Git.

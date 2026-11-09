@@ -9,6 +9,7 @@
 #include <QUrlQuery>
 #include <QRandomGenerator>
 #include <QPointer>
+#include <QDateTime>
 #include <algorithm>
 
 SyncEngine& SyncEngine::instance() {
@@ -27,19 +28,28 @@ void SyncEngine::start() {
     if(!m_unlocked&&!SyncStorage::setting("endpoint").isEmpty())state("برای باز کردن برنامه وارد حساب شوید.");
 }
 void SyncEngine::request(const QString& method,const QString& path,const QJsonObject& body,Callback callback) {
-    QUrl endpoint(SyncStorage::setting("endpoint"));
+    QString endpoint=SyncStorage::setting("endpoint");
+    bool managed=endpoint=="https://laptops.pcpapc172.ir"||endpoint=="https://laptops-cf.pcpapc172.ir";
+    if(managed)endpoint=QDateTime::currentSecsSinceEpoch()<m_fallbackUntil?"https://laptops-cf.pcpapc172.ir":"https://laptops.pcpapc172.ir";
+    QString fallback=managed?(endpoint=="https://laptops.pcpapc172.ir"?"https://laptops-cf.pcpapc172.ir":"https://laptops.pcpapc172.ir"):QString();
+    if(qEnvironmentVariableIsSet("LAPTOPS_SYNC_TEST")&&QUrl(endpoint).host()=="127.0.0.1"&&QUrl(SyncStorage::setting("test_fallback")).host()=="127.0.0.1")fallback=SyncStorage::setting("test_fallback");
+    requestAt(method,path,body,callback,endpoint,fallback);
+}
+void SyncEngine::requestAt(const QString& method,const QString& path,const QJsonObject& body,Callback callback,const QString& endpointText,const QString& fallback) {
+    QUrl endpoint(endpointText);
     if(endpoint.scheme()!="https"&&!(qEnvironmentVariableIsSet("LAPTOPS_SYNC_TEST")&&endpoint.host()=="127.0.0.1"&&endpoint.scheme()=="http")) {
         m_lastHttpStatus=0;m_lastNetworkError=QNetworkReply::ProtocolInvalidOperationError;
         callback(false,{},"آدرس سرور باید HTTPS باشد.");return;
     }
     QNetworkRequest request(QUrl(endpoint.toString()+path));request.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
+    request.setRawHeader("User-Agent","LaptopManager/4.1.0");
     request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,QNetworkRequest::ManualRedirectPolicy);
     if(!m_token.isEmpty())request.setRawHeader("Authorization","Bearer "+m_token);
     auto bytes=QJsonDocument(body).toJson(QJsonDocument::Compact);
     auto* reply=method=="GET"?m_network.get(request):m_network.sendCustomRequest(request,method.toLatin1(),bytes);
     int generation=m_generation;
     QTimer::singleShot(15000,reply,[reply]{if(!reply->isFinished())reply->abort();});
-    connect(reply,&QNetworkReply::finished,this,[this,reply,callback,generation]{
+    connect(reply,&QNetworkReply::finished,this,[this,reply,callback,generation,method,path,body,endpointText,fallback]{
         if(generation!=m_generation){reply->deleteLater();return;}
         m_lastHttpStatus=reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
         m_lastNetworkError=int(reply->error());
@@ -47,7 +57,19 @@ void SyncEngine::request(const QString& method,const QString& path,const QJsonOb
         bool ok=reply->error()==QNetworkReply::NoError&&m_lastHttpStatus>=200&&m_lastHttpStatus<300&&parse.error==QJsonParseError::NoError;
         QJsonValue value=document.isArray()?QJsonValue(document.array()):QJsonValue(document.object());
         QString why=document.object()["detail"].isString()?document.object()["detail"].toString():reply->errorString();
-        reply->deleteLater();callback(ok,value,why);
+        bool temporary=(m_lastHttpStatus>=500&&m_lastHttpStatus<=599)||(m_lastHttpStatus==0&&reply->error()!=QNetworkReply::NoError);
+        // Batch IDs make ambiguous POST replay safe. User creation has no receipt;
+        // do not repeat that request automatically after an uncertain reply.
+        bool replaySafe=method=="GET"||path=="/v1/login"||path=="/v1/batches"||path=="/v1/logout";
+        reply->deleteLater();
+        if(!ok&&!fallback.isEmpty()&&temporary&&replaySafe) {
+            QString alternate=fallback;
+            requestAt(method,path,body,[this,callback,alternate](bool success,QJsonValue result,QString message){
+                if(success)m_fallbackUntil=alternate=="https://laptops-cf.pcpapc172.ir"?QDateTime::currentSecsSinceEpoch()+60:0;
+                callback(success,result,message);
+            },alternate,QString());return;
+        }
+        callback(ok,value,why);
     });
 }
 bool SyncEngine::unavailable() const {
@@ -103,7 +125,9 @@ void SyncEngine::logout() {
     // Revoke the captured token independently, then cancel all in-flight domain work locally.
     QByteArray token=m_token;lock(false);state("از حساب خارج شدید؛ برای باز کردن برنامه وارد شوید.");
     if(!token.isEmpty()) {
-        QNetworkRequest request(QUrl(SyncStorage::setting("endpoint")+"/v1/logout"));
+        QString endpoint=SyncStorage::setting("endpoint");
+        if((endpoint=="https://laptops.pcpapc172.ir"||endpoint=="https://laptops-cf.pcpapc172.ir")&&QDateTime::currentSecsSinceEpoch()<m_fallbackUntil)endpoint="https://laptops-cf.pcpapc172.ir";
+        QNetworkRequest request(QUrl(endpoint+"/v1/logout"));
         request.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");request.setRawHeader("Authorization","Bearer "+token);
         request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,QNetworkRequest::ManualRedirectPolicy);
         auto* reply=m_network.post(request,"{}");connect(reply,&QNetworkReply::finished,reply,&QObject::deleteLater);
